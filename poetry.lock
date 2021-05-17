@@ -473,11 +473,11 @@ python-versions = "*"
 
 [[package]]
 name = "django-ratelimit"
-version = "2.0.0"
+version = "3.0.1"
 description = "Cache-based rate-limiting for Django."
 category = "main"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+python-versions = ">=3.4"
 
 [[package]]
 name = "django-redirect-urls"
@@ -1522,7 +1522,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "d45f865abd03b2de2d9f8e5725f2a66aa0bdde04afa1bf2403a7fe8324958727"
+content-hash = "27380a167e3c3c9c0a85448175a8587172e30ea4dd00d452aa28d54e6f19088d"
 
 [metadata.files]
 amqp = [
@@ -1732,8 +1732,8 @@ django-querycount = [
     {file = "django-querycount-0.7.0.tar.gz", hash = "sha256:8f5123d78716ff0704f2373e746a7200b8d8417798ce4a99bf2de87e3768f9ce"},
 ]
 django-ratelimit = [
-    {file = "django-ratelimit-2.0.0.tar.gz", hash = "sha256:ddb6bd68a7a25fab335a0441671681ce9993167e640a2301a2e0e07ce9dd46fb"},
-    {file = "django_ratelimit-2.0.0-py2.py3-none-any.whl", hash = "sha256:40dd23dcdda413d2199bb88b4d9151bf66ea19586b2047ada313ddcf77e2959c"},
+    {file = "django-ratelimit-3.0.1.tar.gz", hash = "sha256:73223d860abd5c5d7b9a807fabb39a6220068129b514be8d78044b52607ab154"},
+    {file = "django_ratelimit-3.0.1-py2.py3-none-any.whl", hash = "sha256:857e797f23de948b204a31dba9d88aea3ce731b7a5d926d0240c772e19b5486f"},
 ]
 django-redirect-urls = [
     {file = "django-redirect-urls-1.0.tar.gz", hash = "sha256:e5b1dec666758c7d2621ce337458a09e4b3feeb06cb9ec5d43b17d66b87ea97d"},
