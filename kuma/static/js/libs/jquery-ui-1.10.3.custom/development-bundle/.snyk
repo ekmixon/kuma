@@ -1,0 +1,10 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.21.5
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:mime:20170907':
+    - testswarm > request > mime:
+        patched: '2021-07-15T20:55:14.997Z'
+    - testswarm > request > form-data > mime:
+        patched: '2021-07-15T20:55:14.997Z'
