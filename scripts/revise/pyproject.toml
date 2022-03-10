@@ -8,7 +8,7 @@ authors = ["rjohnson <rjohnson@mozilla.com>"]
 python = "^3.8"
 requests = "^2.22.0"
 click = "^7.0"
-pyyaml = "^5.3"
+pyyaml = "^5.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
