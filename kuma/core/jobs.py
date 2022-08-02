@@ -97,10 +97,9 @@ class BannedIPsJob(KumaJob):
         """Get a (JSON-serializable) list of banned IPs."""
         from .models import IPBan
 
-        ips = list(
+        return list(
             IPBan.objects.filter(deleted__isnull=True).values_list("ip", flat=True)
         )
-        return ips
 
     def empty(self):
         """Return an empty list of IPs."""

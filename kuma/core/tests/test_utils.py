@@ -85,7 +85,7 @@ def test_safer_pyquery(mock_requests):
 
 def test_requests_retry_session(mock_requests):
     def absolute_url(uri):
-        return "http://example.com" + uri
+        return f"http://example.com{uri}"
 
     mock_requests.get(absolute_url("/a/ok"), text="hi")
     mock_requests.get(absolute_url("/oh/noes"), text="bad!", status_code=504)

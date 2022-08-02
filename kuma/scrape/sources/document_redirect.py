@@ -10,7 +10,7 @@ class DocumentRedirectSource(DocumentBaseSource):
     """Request the rendered document, to detect redirects."""
 
     def source_path(self):
-        return "/%s/docs/%s" % (self.locale, self.slug)
+        return f"/{self.locale}/docs/{self.slug}"
 
     def load_prereqs(self, requester, storage):
         """Request the document, and process the redirects and response."""

@@ -11,14 +11,14 @@ def test_gather_revisions_default(root_doc, client):
     """The default is requests if revision count is unspecified."""
     path = root_doc.get_absolute_url()
     source = DocumentHistorySource(path)
-    html = client.get(path + "$history", HTTP_HOST=settings.WIKI_HOST).content
+    html = client.get(f"{path}$history", HTTP_HOST=settings.WIKI_HOST).content
     requester = mock_requester(content=html, status_code=200)
     storage = mock_storage(spec=["get_document_history", "save_document_history"])
     resources = source.gather(requester, storage)
-    history_path = path + "$history"
+    history_path = f"{path}$history"
     requester.request.assert_called_once_with(history_path, raise_for_status=False)
     rev1, rev2 = root_doc.revisions.all()
-    revision_pattern = path + "$revision/%d"
+    revision_pattern = f"{path}$revision/%d"
     expected_resources = [("revision", revision_pattern % rev.id, {}) for rev in [rev2]]
     assert resources == expected_resources
     assert source.state == source.STATE_DONE
@@ -38,14 +38,14 @@ def test_gather_revisions_multiple(root_doc, client):
     """If a revision count is specified, that many are requested."""
     path = root_doc.get_absolute_url()
     source = DocumentHistorySource(path, revisions=2)
-    html = client.get(path + "$history", HTTP_HOST=settings.WIKI_HOST).content
+    html = client.get(f"{path}$history", HTTP_HOST=settings.WIKI_HOST).content
     requester = mock_requester(content=html, status_code=200)
     storage = mock_storage(spec=["get_document_history", "save_document_history"])
     resources = source.gather(requester, storage)
-    history_path = path + "$history?limit=2"
+    history_path = f"{path}$history?limit=2"
     requester.request.assert_called_once_with(history_path, raise_for_status=False)
     rev1, rev2 = root_doc.revisions.all()
-    revision_pattern = path + "$revision/%d"
+    revision_pattern = f"{path}$revision/%d"
     expected_resources = [
         ("revision", revision_pattern % rev.id, {}) for rev in [rev1, rev2]
     ]
@@ -61,14 +61,14 @@ def test_gather_revisions_more_than_available(root_doc, client):
     """If a revision count is more than the revisions, take note."""
     path = root_doc.get_absolute_url()
     source = DocumentHistorySource(path, revisions=3)
-    html = client.get(path + "$history", HTTP_HOST=settings.WIKI_HOST).content
+    html = client.get(f"{path}$history", HTTP_HOST=settings.WIKI_HOST).content
     requester = mock_requester(content=html, status_code=200)
     storage = mock_storage(spec=["get_document_history", "save_document_history"])
     resources = source.gather(requester, storage)
-    history_path = path + "$history?limit=3"
+    history_path = f"{path}$history?limit=3"
     requester.request.assert_called_once_with(history_path, raise_for_status=False)
     rev1, rev2 = root_doc.revisions.all()
-    revision_pattern = path + "$revision/%d"
+    revision_pattern = f"{path}$revision/%d"
     expected_resources = [
         ("revision", revision_pattern % rev.id, {}) for rev in [rev1, rev2]
     ]
@@ -111,11 +111,11 @@ def test_gather_translated(translated_doc, client):
     """A translated document may include the English source doc."""
     path = translated_doc.get_absolute_url()
     source = DocumentHistorySource(path)
-    html = client.get(path + "$history", HTTP_HOST=settings.WIKI_HOST).content
+    html = client.get(f"{path}$history", HTTP_HOST=settings.WIKI_HOST).content
     requester = mock_requester(content=html, status_code=200)
     storage = mock_storage(spec=["get_document_history", "save_document_history"])
     resources = source.gather(requester, storage)
-    history_path = path + "$history"
+    history_path = f"{path}$history"
     requester.request.assert_called_once_with(history_path, raise_for_status=False)
     rev = translated_doc.current_revision
     rev_path = rev.get_absolute_url()

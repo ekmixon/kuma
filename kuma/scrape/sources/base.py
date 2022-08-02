@@ -81,7 +81,7 @@ class Source(object):
         elif option_type == "int":
             valid = value == int(value)
         elif option_type == "int_all":
-            valid = value == "all" or value == int(value)
+            valid = value in ["all", int(value)]
         else:
             assert option_type == "text"
             valid = isinstance(value, str)
@@ -142,10 +142,7 @@ class Source(object):
 
     def decode_href(self, href):
         """Convert URL-escaped href attributes to unicode."""
-        if isinstance(href, bytes):
-            uhref = href.decode("ascii")
-        else:
-            uhref = href
+        uhref = href.decode("ascii") if isinstance(href, bytes) else href
         decoded = unquote(uhref)
         assert isinstance(decoded, str)
         return decoded
@@ -181,21 +178,20 @@ class Source(object):
                 self.error = error
                 self.state = self.STATE_ERROR
             else:
-                if has_prereqs:
-                    self.freshness = self.FRESH_YES
-                    # Save the data and load follow-on sources
-                    try:
-                        next_sources = self.save_data(storage, data)
-                    except self.SourceError as error:
-                        self.error = error
-                        self.state = self.STATE_ERROR
-                    else:
-                        self.state = self.STATE_DONE
-                        return next_sources
-                else:
+                if not has_prereqs:
                     # Return the additional prerequisite sources
                     return data["needs"]
 
+                self.freshness = self.FRESH_YES
+                # Save the data and load follow-on sources
+                try:
+                    next_sources = self.save_data(storage, data)
+                except self.SourceError as error:
+                    self.error = error
+                    self.state = self.STATE_ERROR
+                else:
+                    self.state = self.STATE_DONE
+                    return next_sources
         # Load no more sources in a "done" state
         assert self.state in [self.STATE_ERROR, self.STATE_DONE]
         return []
@@ -231,8 +227,7 @@ class DocumentBaseSource(Source):
 
     def locale_and_slug(self, path):
         """Extract a document locale and slug from a path."""
-        match = self.re_path.match(path)
-        if match:
+        if match := self.re_path.match(path):
             return match.groups()
         else:
             raise ValueError(f"Not a valid document path {path!r}")

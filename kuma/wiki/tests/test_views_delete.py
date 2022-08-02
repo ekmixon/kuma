@@ -16,7 +16,7 @@ def test_login(root_doc, client, endpoint):
     args = [root_doc.slug]
     if endpoint == "revert_document":
         args.append(root_doc.current_revision.id)
-    url = reverse("wiki.{}".format(endpoint), args=args)
+    url = reverse(f"wiki.{endpoint}", args=args)
     response = client.get(url, HTTP_HOST=settings.WIKI_HOST)
     assert response.status_code == 302
     assert "en-US/users/signin?" in response["Location"]
@@ -32,7 +32,7 @@ def test_permission(root_doc, editor_client, endpoint):
     fixture, although logged in, does not have the proper permission.
     """
     args = [root_doc.slug]
-    url = reverse("wiki.{}".format(endpoint), args=args)
+    url = reverse(f"wiki.{endpoint}", args=args)
     response = editor_client.get(url, HTTP_HOST=settings.WIKI_HOST)
     assert response.status_code == 403
     assert_no_cache_header(response)

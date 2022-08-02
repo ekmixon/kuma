@@ -81,15 +81,13 @@ class SearchView(ListAPIView):
 
         try:
             aggs = aggregations or {}
-            facet_counts = [
-                (slug, aggs[slug]["doc_count"]) for slug in filter_mapping.keys()
-            ]
+            facet_counts = [(slug, aggs[slug]["doc_count"]) for slug in filter_mapping]
         except KeyError:
             facet_counts = []
 
         for slug, count in facet_counts:
 
-            filter_ = filter_mapping.get(slug, None)
+            filter_ = filter_mapping.get(slug)
             if filter_ is None:
                 filter_name = slug
                 group_name = None

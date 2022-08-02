@@ -18,10 +18,11 @@ def test_react_i18n_check(tmpdir, settings):
     assert len(errors) == 2
     sv_path = os.path.join(base_dir, "static", "jsi18n", "sv-SE", "react.json")
     assert errors[0] == Error(
-        "Locale file {} does not exist".format(sv_path),
+        f"Locale file {sv_path} does not exist",
         hint=mock.ANY,
         id=checks.ERROR_MISSING_I18N_FILE,
     )
+
     # Create both but make one of them weird
     en_path = os.path.join(base_dir, "static", "jsi18n", "en-US", "react.json")
     with open(en_path, "w") as f:

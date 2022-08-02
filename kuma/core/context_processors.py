@@ -14,7 +14,7 @@ def global_settings(request):
     def clean_safe_url(url):
         if "://" not in url:
             # E.g. 'elasticsearch:9200'
-            url = "http://" + url
+            url = f"http://{url}"
         parsed = urlparse(url)
         if "@" in parsed.netloc:
             parsed = parsed._replace(

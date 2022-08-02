@@ -69,7 +69,7 @@ class NamespacedTaggableManagerTest(TestCase):
         tags = ["foo", "bar", "baz"]
         apple.tags.add_ns("a:", *tags)
 
-        self.assert_tags_equal(apple.tags.all(), ["a:%s" % t for t in tags])
+        self.assert_tags_equal(apple.tags.all(), [f"a:{t}" for t in tags])
 
     def test_duplicate_names_to_create(self):
         apple = self.food_model.objects.create(name="apple")

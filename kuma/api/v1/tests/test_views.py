@@ -563,7 +563,7 @@ def test_user_details_happy_path(user_client, wiki_user):
     wiki_user.refresh_from_db()
     assert wiki_user.username == "art"
     assert wiki_user.fullname == "Art Vandelay"
-    assert wiki_user.is_newsletter_subscribed is False
+    assert not wiki_user.is_newsletter_subscribed
     assert wiki_user.locale == "ja"
 
 

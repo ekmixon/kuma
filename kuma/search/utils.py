@@ -39,9 +39,12 @@ class QueryURLObject(URLObject):
         params = self.query.multi_dict
         if name in params:
             for param, defaults in params.items():
-                if param == name:
-                    if value not in defaults and value not in (None, [None]):
-                        defaults.append(value)
+                if (
+                    param == name
+                    and value not in defaults
+                    and value not in (None, [None])
+                ):
+                    defaults.append(value)
         else:
             params[name] = value
         return self.without_query().set_query_params(self.clean_params(params))

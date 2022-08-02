@@ -24,16 +24,16 @@ class BannerAdmin(admin.ModelAdmin):
         if rows_updated == 1:
             message_bit = "1 banner was"
         else:
-            message_bit = "%s banners were " % rows_updated
-        self.message_user(request, "%s successfully marked as active." % message_bit)
+            message_bit = f"{rows_updated} banners were "
+        self.message_user(request, f"{message_bit} successfully marked as active.")
 
     def deactivate_all(self, request, queryset):
         rows_updated = queryset.update(active=False)
         if rows_updated == 1:
             message_bit = "1 banner was"
         else:
-            message_bit = "%s banners were " % rows_updated
-        self.message_user(request, "%s successfully deactived." % message_bit)
+            message_bit = f"{rows_updated} banners were "
+        self.message_user(request, f"{message_bit} successfully deactived.")
 
     activate_all.short_description = "Activate all selected banners"
     deactivate_all.short_description = "Deactivate all selected banners"

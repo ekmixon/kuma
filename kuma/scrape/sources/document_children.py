@@ -14,12 +14,11 @@ class DocumentChildrenSource(DocumentBaseSource):
     }
 
     def source_path(self):
-        return "/%s/docs/%s$children?depth=1" % (self.locale, self.slug)
+        return f"/{self.locale}/docs/{self.slug}$children?depth=1"
 
     def load_and_validate_existing(self, storage):
         """Load child data from a previous gather."""
-        child_data = storage.get_document_children(self.locale, self.slug)
-        if child_data:
+        if child_data := storage.get_document_children(self.locale, self.slug):
             children = self.extract_data(child_data)
             return True, children
         else:

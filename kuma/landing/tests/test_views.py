@@ -62,7 +62,7 @@ def test_robots_allowed_main_website(client, settings):
 def test_robots_all_allowed_wiki_website(client, settings):
     """On the wiki website, allow robots with NO restrictions."""
     host = "main.mdn.moz.works"
-    wiki_host = "wiki." + host
+    wiki_host = f"wiki.{host}"
     settings.WIKI_HOST = wiki_host
     settings.ALLOWED_HOSTS = [host, wiki_host]
     settings.ALLOW_ROBOTS_WEB_DOMAINS = [host, wiki_host]

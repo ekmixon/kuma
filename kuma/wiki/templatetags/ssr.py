@@ -57,12 +57,9 @@ def _render(component_name, html, script, needs_serialization=False):
         assert isinstance(script, dict), type(script)
         script = json.dumps(script).replace("</", "<\\/")
     else:
-        script = "JSON.parse({})".format(script)
+        script = f"JSON.parse({script})"
 
-    return (
-        '<div id="react-container" data-component-name="{}">{}</div>\n'
-        "<script>window._react_data = {};</script>\n"
-    ).format(component_name, html, script)
+    return f'<div id="react-container" data-component-name="{component_name}">{html}</div>\n<script>window._react_data = {script};</script>\n'
 
 
 def client_side_render(component_name, data):
@@ -82,7 +79,7 @@ def server_side_render(component_name, data):
     If any exceptions are thrown during the server-side rendering, we
     fall back to client-side rendering instead.
     """
-    url = "{}/{}".format(settings.SSR_URL, component_name)
+    url = f"{settings.SSR_URL}/{component_name}"
     timeout = settings.SSR_TIMEOUT
     # Try server side rendering
     try:

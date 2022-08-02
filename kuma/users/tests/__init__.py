@@ -68,14 +68,15 @@ class SampleRevisionsMixin(object):
         create_new_documents = not document
         revisions_created = []
         for i in range(1, 1 + num):
-            if create_new_documents is True:
+            if create_new_documents:
                 document = create_document(save=True)
             new_revision = create_revision(
-                title="Doc id {} Revision {}".format(document.id, i),
+                title=f"Doc id {document.id} Revision {i}",
                 document=document,
                 creator=creator,
                 save=True,
             )
+
             revisions_created.append(new_revision)
         return revisions_created
 
@@ -232,8 +233,7 @@ class SocialTestMixin(object):
     def ensure_github_app(self):
         """Ensure a GitHub SocialApp is installed, configured."""
         provider = registry.by_id(KumaGitHubProvider.id)
-        app = SocialApp.objects.get(provider=provider.id)
-        return app
+        return SocialApp.objects.get(provider=provider.id)
 
     def google_login(
         self,

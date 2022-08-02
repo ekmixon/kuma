@@ -285,7 +285,10 @@ def test_revision_api_conditional_post(
     )
 
     # First let's get some revised content and the Last-Modified header.
-    response = client.get(url + "?mode=remove&macros=m1", HTTP_HOST=settings.WIKI_HOST)
+    response = client.get(
+        f"{url}?mode=remove&macros=m1", HTTP_HOST=settings.WIKI_HOST
+    )
+
     assert response.status_code == 200
     revised_content = response.content.decode()
     assert revised_content == '{{M2("z")}}'

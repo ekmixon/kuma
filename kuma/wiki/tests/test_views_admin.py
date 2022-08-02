@@ -57,8 +57,9 @@ def test_purge_get(root_doc, another_root_doc, purge_client):
     another_root_doc.delete()
     url = reverse("wiki.admin_bulk_purge")
     response = purge_client.get(
-        url, {"ids": "{},{}".format(root_doc.id, another_root_doc.id)}
+        url, {"ids": f"{root_doc.id},{another_root_doc.id}"}
     )
+
     assert response.status_code == 200
     assert_no_cache_header(response)
     # Make sure nothing has happended (i.e. the docs haven't been purged).
@@ -69,7 +70,7 @@ def test_purge_get(root_doc, another_root_doc, purge_client):
 def test_purge_post(root_doc, another_root_doc, purge_client):
     root_doc.delete()
     another_root_doc.delete()
-    query_params = "?ids={},{}".format(root_doc.id, another_root_doc.id)
+    query_params = f"?ids={root_doc.id},{another_root_doc.id}"
     url = reverse("wiki.admin_bulk_purge") + query_params
     response = purge_client.post(url, data={"confirm_purge": "true"})
     assert response.status_code == 302

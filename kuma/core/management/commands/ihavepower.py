@@ -21,7 +21,7 @@ class Command(BaseCommand):
             user = User.objects.get(username=username)
 
         except User.DoesNotExist:
-            raise CommandError("User %s does not exist." % username)
+            raise CommandError(f"User {username} does not exist.")
 
         if user.is_superuser and user.is_staff and not password:
             raise CommandError("User already has the power!")

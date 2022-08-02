@@ -53,10 +53,10 @@ class Command(BaseCommand):
             reason__icontains="spam",
         )
         count = logged_deletions.count()
-        self.stdout.write("Checking %s deleted document logs" % count)
+        self.stdout.write(f"Checking {count} deleted document logs")
 
         sender = get_user_model().objects.get(username=options["username"])
-        self.stdout.write("Submitting spam to Akismet as user %s" % sender)
+        self.stdout.write(f"Submitting spam to Akismet as user {sender}")
 
         akismet = Akismet()
 
@@ -75,23 +75,21 @@ class Command(BaseCommand):
                 # no document found with that locale and slug,
                 # probably purged at some point
                 self.stderr.write(
-                    "Ignoring locale %s and slug %s"
-                    % (logged_deletion.locale, logged_deletion.slug)
+                    f"Ignoring locale {logged_deletion.locale} and slug {logged_deletion.slug}"
                 )
+
                 continue
 
             if not document.deleted:
                 # guess the document got undeleted at some point again,
                 # ignoring..
-                self.stderr.write("Ignoring undeleted document %s" % document)
+                self.stderr.write(f"Ignoring undeleted document {document}")
                 continue
 
             if not document.current_revision:
                 # no current revision found, which means something is fishy
                 # but we can't submit it as spam since we don't have a revision
-                self.stderr.write(
-                    "Ignoring document %s without current " "revision" % document.pk
-                )
+                self.stderr.write(f"Ignoring document {document.pk} without current revision")
                 continue
 
             akismet_data = AkismetHistoricalData(document.current_revision)

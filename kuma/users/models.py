@@ -236,8 +236,7 @@ class User(AbstractUser):
         """Creates a recovery URL for the user."""
         uidb64 = urlsafe_base64_encode(force_bytes(self.pk))
         token = default_token_generator.make_token(self)
-        link = reverse("users.recover", kwargs={"token": token, "uidb64": uidb64})
-        return link
+        return reverse("users.recover", kwargs={"token": token, "uidb64": uidb64})
 
     def set_next_subscriber_number_and_save(self):
         assert not self.subscriber_number, "already set"

@@ -46,11 +46,9 @@ def test_server_side_render(
     mock_get_l10n_data.side_effect = lambda l: localization_data
 
     # This will be the output sent by the mock Node server
-    mock_html = "<p>{}</p><p>{}</p><p>{}</p><p>{}</p>".format(
-        body, toc, links, contributors
-    )
+    mock_html = f"<p>{body}</p><p>{toc}</p><p>{links}</p><p>{contributors}</p>"
 
-    url = "{}/{}".format(settings.SSR_URL, "SPA")
+    url = f"{settings.SSR_URL}/SPA"
 
     mock_requests.post(url, json={"html": mock_html, "script": "STUFF"})
 
@@ -84,10 +82,8 @@ def test_client_side_render(mock_get_l10n_data, mock_dumps):
         "pluralExpression": None,
     }
     output = ssr.render_react("page", "en-US", path, document_data, ssr=False)
-    expected = (
-        '<div id="react-container" data-component-name="{}"></div>\n'
-        "<script>window._react_data = {};</script>\n"
-    ).format("page", json.dumps(data))
+    expected = f'<div id="react-container" data-component-name="page"></div>\n<script>window._react_data = {json.dumps(data)};</script>\n'
+
     assert output == expected
 
 

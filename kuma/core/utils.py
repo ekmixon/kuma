@@ -203,8 +203,7 @@ def parse_tags(tagstring, sorted=True):
                     buffer.append(c)
                     c = next(i)
                 if buffer:
-                    word = "".join(buffer).strip()
-                    if word:
+                    if word := "".join(buffer).strip():
                         words.append(word)
                     buffer = []
                 open_quote = False
@@ -220,10 +219,7 @@ def parse_tags(tagstring, sorted=True):
                 saw_loose_comma = True
             to_be_split.append("".join(buffer))
     if to_be_split:
-        if saw_loose_comma:
-            delimiter = ","
-        else:
-            delimiter = " "
+        delimiter = "," if saw_loose_comma else " "
         for chunk in to_be_split:
             words.extend(split_strip(chunk, delimiter))
     words = list(words)
@@ -250,8 +246,7 @@ def chunked(iterable, n):
     """
     iterable = iter(iterable)
     while True:
-        t = tuple(islice(iterable, n))
-        if t:
+        if t := tuple(islice(iterable, n)):
             yield t
         else:
             return
@@ -259,14 +254,13 @@ def chunked(iterable, n):
 
 def chord_flow(pre_task, tasks, post_task):
 
-    if settings.CELERY_TASK_ALWAYS_EAGER:
-        # Eager mode and chords don't get along. So we serialize
-        # the tasks as a workaround.
-        tasks.insert(0, pre_task)
-        tasks.append(post_task)
-        return chain(*tasks)
-    else:
+    if not settings.CELERY_TASK_ALWAYS_EAGER:
         return chain(pre_task, chord(header=tasks, body=post_task))
+    # Eager mode and chords don't get along. So we serialize
+    # the tasks as a workaround.
+    tasks.insert(0, pre_task)
+    tasks.append(post_task)
+    return chain(*tasks)
 
 
 def get_unique(
@@ -441,21 +435,17 @@ def add_shared_cache_control(response, **kwargs):
       cache for the default perioid of time
     - public - Allow intermediate proxies to cache response
     """
-    nocache = response.has_header("Cache-Control") and (
+    if nocache := response.has_header("Cache-Control") and (
         "no-cache" in response["Cache-Control"]
         or "no-store" in response["Cache-Control"]
-    )
-    if nocache:
+    ):
         return
 
-    # Set the default values.
     cc_kwargs = {
         "public": True,
         "max_age": 0,
         "s_maxage": settings.CACHE_CONTROL_DEFAULT_SHARED_MAX_AGE,
-    }
-    # Override the default values and/or add new ones.
-    cc_kwargs.update(kwargs)
+    } | kwargs
 
     patch_cache_control(response, **cc_kwargs)
 
@@ -465,8 +455,7 @@ def order_params(original_url):
     bits = urlsplit(original_url)
     qs = sorted(parse_qsl(bits.query, keep_blank_values=True))
     new_qs = urlencode(qs)
-    new_url = urlunsplit((bits.scheme, bits.netloc, bits.path, new_qs, bits.fragment))
-    return new_url
+    return urlunsplit((bits.scheme, bits.netloc, bits.path, new_qs, bits.fragment))
 
 
 def requests_retry_session(
@@ -540,7 +529,7 @@ def safer_pyquery(*args, **kwargs):
     # We'll run it ourselves once and if it matches, "ruin" it by
     # injecting that extra space.
     if (
-        len(args) >= 1
+        args
         and isinstance(args[0], str)
         and args[0].split("://", 1)[0] in ("http", "https")
     ):

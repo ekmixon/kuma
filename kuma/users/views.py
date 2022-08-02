@@ -91,9 +91,9 @@ def ban_user(request, username):
             )
             ban.save()
             return redirect(user)
+    elif user.active_ban:
+        return redirect(user)
     else:
-        if user.active_ban:
-            return redirect(user)
         form = UserBanForm()
     # A list of common reasons for banning a user, loaded from constance
     try:
@@ -239,23 +239,21 @@ def ban_user_and_cleanup_summary(request, username):
         if revision.previous:
             previous_good_rev[revision.document_id] = revision.previous
 
-            reverted = revert_document(
+            if reverted := revert_document(
                 request=request, revision_id=revision.previous.id
-            )
-            if reverted:
+            ):
                 revisions_reverted_list.append(revision)
             else:
                 # If the revert was unsuccessful, include this in the follow-up list
                 revisions_not_reverted_list.append(revision)
 
-        # If this is a new document/translation, delete it
+        elif deleted := delete_document(
+            request=request, document=revision.document
+        ):
+            revisions_deleted_list.append(revision)
         else:
-            deleted = delete_document(request=request, document=revision.document)
-            if deleted:
-                revisions_deleted_list.append(revision)
-            else:
-                # If the delete was unsuccessful, include this in the follow-up list
-                revisions_not_deleted_list.append(revision)
+            # If the delete was unsuccessful, include this in the follow-up list
+            revisions_not_deleted_list.append(revision)
 
     # Find just the latest revision for each document
     submitted_to_akismet_by_distinct_doc = revision_by_distinct_doc(
@@ -350,9 +348,9 @@ def revision_by_distinct_doc(list_of_revisions):
 
 
 def ban_and_revert_notification(spammer, moderator, info):
-    subject = "[MDN] %s has been banned by %s" % (spammer, moderator)
+    subject = f"[MDN] {spammer} has been banned by {moderator}"
     context = {"spammer": spammer, "moderator": moderator}
-    context.update(info)
+    context |= info
     body = render_to_string("wiki/email/spam_ban.ltxt", context)
 
     send_mail(
@@ -684,12 +682,7 @@ class SignupView(BaseSignupView):
                     "primary": False,
                 }
 
-        # This magic sauce only exists whilst this Django view is being used
-        # both by Yari (in testing) and by old Kuma (production).
-        # Once Kuma is divorced from doing any HTML rendering, we can refactor this.
-        is_yari_signup = self.request.session.get("yari_signup", False)
-        if is_yari_signup:
-
+        if is_yari_signup := self.request.session.get("yari_signup", False):
             if not email and extra_email_addresses:
                 # Pick the first primary email.
                 for data in extra_email_addresses:
@@ -768,8 +761,7 @@ class SignupView(BaseSignupView):
                 ACTION_PROFILE_EDIT_ERROR,
                 "username",
             )
-        is_yari_signup = self.request.session.get("yari_signup", False)
-        if is_yari_signup:
+        if is_yari_signup := self.request.session.get("yari_signup", False):
             return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
         return super().form_invalid(form)
@@ -817,15 +809,7 @@ class SignupView(BaseSignupView):
                 request.session["sociallogin_provider"],
             )
 
-        # This view is meant to work for both Yari and for the old Kuma-
-        # front-end way of doing things. ...at the same time. For a slow
-        # and gentle rollout.
-        # Once Kuma is divorced of ever returning HTML in any form, we can
-        # refactor this whole view function to never have to depend
-        # on `request.session.get("yari_signup")`.
-        is_yari_signup = request.session.get("yari_signup", False)
-        # If this is the case, always redirect.
-        if is_yari_signup:
+        if is_yari_signup := request.session.get("yari_signup", False):
             next_url = request.session.get("sociallogin_next_url")
             next_url_prefix = self.get_next_url_prefix(request)
 
@@ -854,7 +838,7 @@ class SignupView(BaseSignupView):
                 "provider": account.get("provider"),
             }
             yari_signup_url = f"{next_url_prefix}/{request.LANGUAGE_CODE}/signup"
-            return redirect(yari_signup_url + "?" + urlencode(params))
+            return redirect(f"{yari_signup_url}?{urlencode(params)}")
 
         return super().get(request, *args, **kwargs)
 

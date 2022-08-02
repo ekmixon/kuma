@@ -20,6 +20,7 @@ document_patterns = [
 
 lang_urlpatterns = [
     re_path(
-        r"^(?P<document_path>%s)" % DOCUMENT_PATH_RE.pattern, include(document_patterns)
-    ),
+        f"^(?P<document_path>{DOCUMENT_PATH_RE.pattern})",
+        include(document_patterns),
+    )
 ]

@@ -21,14 +21,12 @@ class UserSource(Source):
 
     def load_and_validate_existing(self, storage):
         """Load user data from previous runs."""
-        user = None
-        if not self.force:
-            user = storage.get_user(self.username)
+        user = None if self.force else storage.get_user(self.username)
         return user is not None, []
 
     def source_path(self):
         """MDN path for this user."""
-        return "/en-US/profiles/%s" % self.username
+        return f"/en-US/profiles/{self.username}"
 
     def load_prereqs(self, requester, storage):
         """Load and process the profile HTML."""
@@ -50,23 +48,15 @@ class UserSource(Source):
 
     def extract_data(self, html):
         """Extract user data from profile HTML."""
-        data = {}
         parsed = pq(html)
         username_elem = parsed.find("h1.user-title span.nickname")[0]
-        data["username"] = username_elem.text
-        fullname_elems = parsed.find("h1.user-title span.fn")
-        if fullname_elems:
+        data = {"username": username_elem.text}
+        if fullname_elems := parsed.find("h1.user-title span.fn"):
             data["fullname"] = fullname_elems[0].text
 
         if parsed.find("ul.user-info"):
-            for cls, name in (
-                ("title", "title"),
-                ("org", "organization"),
-                ("loc", "location"),
-                ("irc", "irc_nickname"),
-            ):
-                elem = parsed.find("ul.user-info li.%s" % cls)
-                if elem:
+            for cls, name in (("title", "title"), ("org", "organization"), ("loc", "location"), ("irc", "irc_nickname")):
+                if elem := parsed.find(f"ul.user-info li.{cls}"):
                     if cls == "irc":
                         raw = elem[0].text
                         data[name] = raw.replace("IRC: ", "")
@@ -83,11 +73,10 @@ class UserSource(Source):
                 "facebook",
             )
             for social in socials:
-                cssselect = "ul.user-links li.%s a" % social
-                social_elem = parsed.find(cssselect)
-                if social_elem:
+                cssselect = f"ul.user-links li.{social} a"
+                if social_elem := parsed.find(cssselect):
                     social_href = self.decode_href(social_elem.attr("href"))
-                    data["%s_url" % social] = social_href
+                    data[f"{social}_url"] = social_href
 
         since_elem = parsed.find("div.user-since time")
         raw_date_joined = since_elem.attr("datetime")

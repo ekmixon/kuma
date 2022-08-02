@@ -38,9 +38,7 @@ def shared_cache_control(func=None, **kwargs):
 
         return _cache_controlled
 
-    if func:
-        return _shared_cache_controller(func)
-    return _shared_cache_controller
+    return _shared_cache_controller(func) if func else _shared_cache_controller
 
 
 def user_access_decorator(
@@ -219,8 +217,10 @@ def ensure_wiki_domain(func):
 
     @wraps(func)
     def wrapped(request, *args, **kwargs):
-        if not is_wiki(request):
-            return redirect_to_wiki(request)
-        return func(request, *args, **kwargs)
+        return (
+            func(request, *args, **kwargs)
+            if is_wiki(request)
+            else redirect_to_wiki(request)
+        )
 
     return wrapped

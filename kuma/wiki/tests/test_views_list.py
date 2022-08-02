@@ -30,7 +30,7 @@ def test_disallowed_methods(db, client, http_method, endpoint):
     kwargs = None
     if endpoint in ("tag", "list_review_tag", "list_with_localization_tag"):
         kwargs = dict(tag="tag")
-    url = reverse("wiki.{}".format(endpoint), kwargs=kwargs)
+    url = reverse(f"wiki.{endpoint}", kwargs=kwargs)
     resp = getattr(client, http_method)(url, HTTP_HOST=settings.WIKI_HOST)
     assert resp.status_code == 405
     assert_shared_cache_header(resp)

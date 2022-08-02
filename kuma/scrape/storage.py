@@ -217,7 +217,7 @@ class Storage(object):
         user, created = User.objects.get_or_create(username=username)
         for name, value in data.items():
             if name in ("interest", "expertise"):
-                tags = ["profile:%s:%s" % (name, tag) for tag in value]
+                tags = [f"profile:{name}:{tag}" for tag in value]
                 self.safe_add_tags(tags, Tag, user.tags)
             else:
                 setattr(user, name, value)

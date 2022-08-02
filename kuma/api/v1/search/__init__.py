@@ -61,14 +61,10 @@ def search(request, locale=None):
         "slug_prefixes": [x.lower() for x in form.cleaned_data["slug_prefix"]],
     }
 
-    # By default, assume that we will try to make suggestions.
-    make_suggestions = True
-    if len(params["query"]) > 100 or max(len(x) for x in params["query"].split()) > 30:
-        # For example, if it's a really long query, or a specific word is just too
-        # long, you can get those tricky
-        # TransportError(500, 'search_phase_execution_exception', 'Term too complex:
-        # errors which are hard to prevent against.
-        make_suggestions = False
+    make_suggestions = (
+        len(params["query"]) <= 100
+        and max(len(x) for x in params["query"].split()) <= 30
+    )
 
     results = _find(
         params,
@@ -110,8 +106,7 @@ def _find(params, total_only=False, make_suggestions=False, min_suggestion_score
             "body_suggestions", params["query"], term={"field": "body"}
         )
 
-    sub_queries = []
-    sub_queries.append(Q("match", title={"query": params["query"], "boost": 2.0}))
+    sub_queries = [Q("match", title={"query": params["query"], "boost": 2.0})]
     sub_queries.append(Q("match", body={"query": params["query"], "boost": 1.0}))
     if " " in params["query"]:
         sub_queries.append(
@@ -247,24 +242,23 @@ def _find(params, total_only=False, make_suggestions=False, min_suggestion_score
         )
 
         for score, string in suggestion_strings:
-            if score > min_suggestion_score or 1:
-                # Sure, this is different way to spell, but what will it yield
-                # if you actually search it?
-                total = _find(dict(params, query=string), total_only=True)
-                if total["value"] > 0:
-                    suggestions.append(
-                        {
-                            "text": string,
-                            "total": {
-                                # This 'total' is an `AttrDict` instance.
-                                "value": total.value,
-                                "relation": total.relation,
-                            },
-                        }
-                    )
-                    # Since they're sorted by score, it's usually never useful
-                    # to suggestion more than exactly 1 good suggestion.
-                    break
+            # Sure, this is different way to spell, but what will it yield
+            # if you actually search it?
+            total = _find(dict(params, query=string), total_only=True)
+            if total["value"] > 0:
+                suggestions.append(
+                    {
+                        "text": string,
+                        "total": {
+                            # This 'total' is an `AttrDict` instance.
+                            "value": total.value,
+                            "relation": total.relation,
+                        },
+                    }
+                )
+                # Since they're sorted by score, it's usually never useful
+                # to suggestion more than exactly 1 good suggestion.
+                break
 
     return {
         "documents": documents,
@@ -277,14 +271,16 @@ def _unpack_suggestions(query, suggest, keys):
     alternatives = []
     for key in keys:
         for suggestion in getattr(suggest, key, []):
-            for option in suggestion.options:
-                alternatives.append(
+            alternatives.extend(
+                (
+                    option.score,
                     (
-                        option.score,
-                        query[0 : suggestion.offset]
-                        + option.text
-                        + query[suggestion.offset + suggestion.length :],
-                    )
+                        (query[: suggestion.offset] + option.text)
+                        + query[suggestion.offset + suggestion.length :]
+                    ),
                 )
+                for option in suggestion.options
+            )
+
     alternatives.sort(reverse=True)  # highest score first
     return alternatives

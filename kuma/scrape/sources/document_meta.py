@@ -10,12 +10,11 @@ class DocumentMetaSource(DocumentBaseSource):
     OPTIONS = DocumentBaseSource.STANDARD_DOC_OPTIONS
 
     def source_path(self):
-        return "/%s/docs/%s$json" % (self.locale, self.slug)
+        return f"/{self.locale}/docs/{self.slug}$json"
 
     def load_and_validate_existing(self, storage):
         """Load metadata from a previous gather."""
-        metadata = storage.get_document_metadata(self.locale, self.slug)
-        if metadata:
+        if metadata := storage.get_document_metadata(self.locale, self.slug):
             next_sources = self.extract_data(metadata)
             return True, next_sources
         else:
@@ -28,7 +27,7 @@ class DocumentMetaSource(DocumentBaseSource):
         if response.status_code == 200:
             data = response.json()
         else:
-            data = {"error": "status code %s" % response.status_code}
+            data = {"error": f"status code {response.status_code}"}
         return True, data
 
     def save_data(self, storage, data):

@@ -31,7 +31,7 @@ def code_sample_doc(root_doc, wiki_user):
 def test_code_sample(code_sample_doc, client, settings, domain):
     """The raw source for a document can be requested."""
     url = reverse("wiki.code_sample", args=[code_sample_doc.slug, "sample1"])
-    setattr(settings, "ATTACHMENT_" + domain, "testserver")
+    setattr(settings, f"ATTACHMENT_{domain}", "testserver")
     response = client.get(
         url, HTTP_HOST="testserver", HTTP_IF_NONE_MATCH='"some-old-etag"'
     )

@@ -32,8 +32,7 @@ class WikiTestCase(KumaTestCase):
 def document(save=False, **kwargs):
     """Return an empty document with enough stuff filled out that it can be
     saved."""
-    defaults = {"title": datetime.now(), "is_redirect": 0}
-    defaults.update(kwargs)
+    defaults = {"title": datetime.now(), "is_redirect": 0} | kwargs
     if "slug" not in kwargs:
         defaults["slug"] = slugify(defaults["title"])
     d = Document(**defaults)
@@ -52,11 +51,7 @@ def revision(save=False, **kwargs):
 
     """
     doc = None
-    if "document" not in kwargs:
-        doc = document(save=True)
-    else:
-        doc = kwargs["document"]
-
+    doc = document(save=True) if "document" not in kwargs else kwargs["document"]
     defaults = {
         "summary": "Some summary",
         "content": "Some content",
@@ -65,9 +60,7 @@ def revision(save=False, **kwargs):
         "document": doc,
         "tags": '"some", "tags"',
         "toc_depth": 1,
-    }
-
-    defaults.update(kwargs)
+    } | kwargs
 
     rev = Revision(**defaults)
     if save:
@@ -108,7 +101,7 @@ def new_document_data(tags=None):
 class WhitespaceRemovalFilter(html5lib_Filter):
     def __iter__(self):
         for token in html5lib_Filter.__iter__(self):
-            if "SpaceCharacters" == token["type"]:
+            if token["type"] == "SpaceCharacters":
                 continue
             yield token
 
@@ -126,8 +119,10 @@ def create_document_editor_group():
     group = Group.objects.create(name="editor")
     actions = ("add", "change", "delete", "view", "restore")
     perms = [
-        Permission.objects.get(codename="%s_document" % action) for action in actions
+        Permission.objects.get(codename=f"{action}_document")
+        for action in actions
     ]
+
     group.permissions = perms
     group.save()
     return group

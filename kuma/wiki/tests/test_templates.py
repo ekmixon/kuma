@@ -254,7 +254,7 @@ class DocumentTests(UserTestCase, WikiTestCase):
         assert b'<div class="page-toc">' not in response.content
 
     def test_experiment_document_view(self):
-        slug = EXPERIMENT_TITLE_PREFIX + "Test"
+        slug = f"{EXPERIMENT_TITLE_PREFIX}Test"
         r = revision(save=True, content="Experiment.", is_approved=True, slug=slug)
         assert r.document.is_experiment
         response = self.client.get(
@@ -434,7 +434,7 @@ def test_revision_template(root_doc, client):
     assert response["X-Robots-Tag"] == "noindex"
     assert_shared_cache_header(response)
     page = pq(response.content)
-    assert page("h1").text() == "Revision %s of %s" % (rev.id, root_doc.title)
+    assert page("h1").text() == f"Revision {rev.id} of {root_doc.title}"
     assert page("#doc-source pre").text() == rev.content
     assert page('span[data-name="slug"]').text() == root_doc.slug
     assert page('span[data-name="title"]').text() == root_doc.title
@@ -505,7 +505,7 @@ class NewDocumentTests(UserTestCase, WikiTestCase):
         d = Document.objects.get(title=data["title"])
         assert len(response.redirect_chain) == 1
         redirect_uri, status_code = response.redirect_chain[0]
-        assert redirect_uri == ("/en-US/docs/%s" % d.slug)
+        assert redirect_uri == f"/en-US/docs/{d.slug}"
         assert status_code == 302
         assert settings.WIKI_DEFAULT_LANGUAGE == d.locale
         assert tags == sorted(t.name for t in d.tags.all())
@@ -582,7 +582,7 @@ class NewDocumentTests(UserTestCase, WikiTestCase):
         d = _create_document()
         self.client.login(username="admin", password="testpass")
         data = new_document_data()
-        data["slug"] = "%s-once-more-with-feeling" % d.slug
+        data["slug"] = f"{d.slug}-once-more-with-feeling"
         response = self.client.post(
             reverse("wiki.create"), data, HTTP_HOST=settings.WIKI_HOST
         )
@@ -700,9 +700,9 @@ class NewRevisionTests(UserTestCase, WikiTestCase):
         assert expected_subject == edited_email.subject
         assert expected_to == edited_email.to
 
-        assert "{} changed {}.".format(self.username, self.d.title) in edited_email.body
+        assert f"{self.username} changed {self.d.title}." in edited_email.body
 
-        assert (self.d.get_full_url() + "$history") in edited_email.body
+        assert f"{self.d.get_full_url()}$history" in edited_email.body
         assert "utm_campaign=" in edited_email.body
 
     @mock.patch.object(EditDocumentEvent, "fire")
@@ -752,8 +752,7 @@ class NewRevisionTests(UserTestCase, WikiTestCase):
         assert response.status_code == 302
         assert response["X-Robots-Tag"] == "noindex"
         assert_no_cache_header(response)
-        result_tags = list(self.d.tags.names())
-        result_tags.sort()
+        result_tags = sorted(self.d.tags.names())
         assert tags == result_tags
 
     def test_new_form_maintains_based_on_rev(self):
@@ -847,7 +846,7 @@ class TranslateTests(UserTestCase, WikiTestCase):
 
     def _translate_uri(self):
         translate_uri = reverse("wiki.translate", args=[self.d.slug])
-        return "%s?tolocale=%s" % (translate_uri, "es")
+        return f"{translate_uri}?tolocale=es"
 
     def test_translate_GET_logged_out(self):
         """Try to create a translation while logged out."""
@@ -856,7 +855,7 @@ class TranslateTests(UserTestCase, WikiTestCase):
         response = self.client.get(translate_uri, HTTP_HOST=settings.WIKI_HOST)
         assert response.status_code == 302
         assert_no_cache_header(response)
-        expected_url = "%s?next=%s" % (reverse("account_login"), quote(translate_uri))
+        expected_url = f'{reverse("account_login")}?next={quote(translate_uri)}'
         assert expected_url in response["Location"]
 
     def test_translate_GET_with_perm(self):
@@ -1091,7 +1090,7 @@ def _test_form_maintains_based_on_rev(
 
     # Then Fred saves his edit:
     post_data_copy = {"based_on": orig_rev.id, "slug": orig_rev.slug}
-    post_data_copy.update(post_data)  # Don't mutate arg.
+    post_data_copy |= post_data
     response = client.post(uri, data=post_data_copy, HTTP_HOST=settings.WIKI_HOST)
     assert response.status_code in (200, 302)
     assert response["X-Robots-Tag"] == "noindex"

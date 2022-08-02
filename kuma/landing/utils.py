@@ -10,4 +10,4 @@ def favicon_url():
         suffix = "-staging"
     else:
         suffix = "-local"
-    return staticfiles_storage.url("img/favicon32%s.png" % suffix)
+    return staticfiles_storage.url(f"img/favicon32{suffix}.png")

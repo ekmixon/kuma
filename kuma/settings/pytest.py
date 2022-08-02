@@ -38,7 +38,7 @@ LOGGING["loggers"].update(
 # Change the cache key prefix for tests, to avoid overwriting runtime.
 for cache_settings in CACHES.values():
     current_prefix = cache_settings.get("KEY_PREFIX", "")
-    cache_settings["KEY_PREFIX"] = "test." + current_prefix
+    cache_settings["KEY_PREFIX"] = f"test.{current_prefix}"
 
 # Use un-versioned file names, like main.css, instead of versioned
 # filenames requiring hashing, like mdn.1cb62215bf0c.css

@@ -94,8 +94,9 @@ class Command(BaseCommand):
                 # bail if there isn't a current attachment revision
                 # probably because faulty data
                 self.stderr.write(
-                    "no current revision for attachment " "%s, skipping" % attachment.pk
+                    f"no current revision for attachment {attachment.pk}, skipping"
                 )
+
                 continue
 
             # the revision we'll use for some minor metadata when creating the
@@ -150,18 +151,14 @@ class Command(BaseCommand):
 
             # we failed, didn't find any document for this document
             if original_document is None:
-                self.stderr.write(
-                    "Cannot find document for " "attachment %s" % attachment.pk
-                )
+                self.stderr.write(f"Cannot find document for attachment {attachment.pk}")
 
         # yada yada yada
         if self.attached:
             attached_list = get_text_list(self.attached, "and")
             if self.dry_run:
-                self.stdout.write(
-                    "Dry attached files to documents: " "%s" % attached_list
-                )
+                self.stdout.write(f"Dry attached files to documents: {attached_list}")
             else:
-                self.stdout.write("Attached files to documents: %s" % attached_list)
+                self.stdout.write(f"Attached files to documents: {attached_list}")
         else:
             self.stdout.write("Nothing to attach!")

@@ -193,14 +193,15 @@ ALLOWED_ATTRIBUTES["select"] = ["name", "dir"]
 ALLOWED_ATTRIBUTES["option"] = ["value", "selected", "dir"]
 ALLOWED_ATTRIBUTES["ol"] = ["style", "class", "id", "lang", "start", "dir"]
 ALLOWED_ATTRIBUTES.update(
-    dict(
-        (x, ["style", "class", "id", "name", "lang", "dir"])
+    {
+        x: ["style", "class", "id", "name", "lang", "dir"]
         for x in ("h1", "h2", "h3", "h4", "h5", "h6")
-    )
+    }
 )
+
 ALLOWED_ATTRIBUTES.update(
-    dict(
-        (x, ["style", "class", "id", "lang", "dir", "title"])
+    {
+        x: ["style", "class", "id", "lang", "dir", "title"]
         for x in (
             "div",
             "pre",
@@ -236,11 +237,13 @@ ALLOWED_ATTRIBUTES.update(
             "s",
             "strong",
         )
-    )
+    }
 )
+
 ALLOWED_ATTRIBUTES.update(
-    dict((x, ["cite"]) for x in ("blockquote", "del", "ins", "q"))
+    {x: ["cite"] for x in ("blockquote", "del", "ins", "q")}
 )
+
 ALLOWED_ATTRIBUTES["li"] += ["data-default-state"]
 ALLOWED_ATTRIBUTES["time"] += ["datetime"]
 ALLOWED_ATTRIBUTES["ins"] = ["datetime"]
@@ -249,11 +252,12 @@ ALLOWED_ATTRIBUTES["meter"] += ["max", "min", "value", "low", "high", "optimum",
 ALLOWED_ATTRIBUTES["details"] += ["open"]
 # MathML
 ALLOWED_ATTRIBUTES.update(
-    dict((x, ["encoding", "src"]) for x in ("annotation", "annotation-xml"))
+    {x: ["encoding", "src"] for x in ("annotation", "annotation-xml")}
 )
+
 ALLOWED_ATTRIBUTES.update(
-    dict(
-        (x, ["href", "mathbackground", "mathcolor", "id", "class", "style"])
+    {
+        x: ["href", "mathbackground", "mathcolor", "id", "class", "style"]
         for x in (
             "math",
             "maction",
@@ -288,8 +292,9 @@ ALLOWED_ATTRIBUTES.update(
             "none",
             "mprescripts",
         )
-    )
+    }
 )
+
 ALLOWED_ATTRIBUTES["math"] += [
     "display",
     "dir",

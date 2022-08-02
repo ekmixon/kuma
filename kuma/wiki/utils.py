@@ -88,7 +88,7 @@ def get_doc_components_from_url(url, required_locale=None, check_host=True):
     if view not in (document_view, react_document_view):
         raise NotDocumentView
 
-    path = "/" + path
+    path = f"/{path}"
     return locale, path, view_kwargs["document_path"]
 
 
@@ -172,15 +172,10 @@ def analytics_upageviews(revision_ids, start_date, end_date=None):
 
     response = request.execute()
 
-    data = {int(r): 0 for r in revision_ids}
-    data.update(
-        {
-            int(row["dimensions"][0]): int(row["metrics"][0]["values"][0])
-            for row in response["reports"][0]["data"].get("rows", ())
-        }
-    )
-
-    return data
+    return {int(r): 0 for r in revision_ids} | {
+        int(row["dimensions"][0]): int(row["metrics"][0]["values"][0])
+        for row in response["reports"][0]["data"].get("rows", ())
+    }
 
 
 def analytics_upageviews_by_revisions(revisions):

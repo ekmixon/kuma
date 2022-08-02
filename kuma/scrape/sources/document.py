@@ -21,8 +21,7 @@ class DocumentSource(DocumentBaseSource):
             not self.translations and self.depth == 0 and self.revisions == 1
         )
         if not self.force and just_this_doc and self.locale and self.slug:
-            document = storage.get_document(self.locale, self.slug)
-            if document:
+            if document := storage.get_document(self.locale, self.slug):
                 return True, []
         return False, []
 
@@ -150,8 +149,7 @@ class DocumentSource(DocumentBaseSource):
 
     def save_data(self, storage, data):
         """Save the document as a redirect or full document."""
-        redirect_to = data.get("redirect_to")
-        if redirect_to:
+        if redirect_to := data.get("redirect_to"):
             # Prepare data for a redirect document
             doc_data = {
                 "locale": self.locale,
@@ -171,10 +169,7 @@ class DocumentSource(DocumentBaseSource):
                 "title",
                 "uuid",
             )
-            doc_data = {}
-            for key in keys:
-                if key in data:
-                    doc_data[key] = data[key]
+            doc_data = {key: data[key] for key in keys if key in data}
             if doc_data["slug"] != self.slug:
                 logger.warning(
                     'Meta slug "%s" does not match slug for "%s".',

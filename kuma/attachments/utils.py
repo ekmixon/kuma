@@ -26,11 +26,7 @@ def allow_add_attachment_by(user):
     if user.has_perm("attachments.add_attachment"):
         # Explicit add permission overrides disallow
         return True
-    if user.has_perm("attachments.disallow_add_attachment"):
-        # Disallow generally applied via group, so per-user allow can
-        # override
-        return False
-    return True
+    return not user.has_perm("attachments.disallow_add_attachment")
 
 
 def full_attachment_url(attachment_id, filename):

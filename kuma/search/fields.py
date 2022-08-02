@@ -15,10 +15,7 @@ class SearchQueryField(serializers.ReadOnlyField):
 
     def to_representation(self, value):
         request = self.context.get("request")
-        if request is None:
-            return ""
-        else:
-            return request.query_params.get("q", None)
+        return "" if request is None else request.query_params.get("q", None)
 
 
 class SiteURLField(serializers.ReadOnlyField):

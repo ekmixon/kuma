@@ -46,13 +46,15 @@ class Command(ScrapeCommand):
         host, ssl, path = self.parse_url_or_path(options["url"])
         scraper = self.make_scraper(host=host, ssl=ssl)
 
-        params = {}
-        for param in ("translations", "revisions", "depth"):
-            if options[param]:
-                params[param] = options[param]
+        params = {
+            param: options[param]
+            for param in ("translations", "revisions", "depth")
+            if options[param]
+        }
+
         scraper.add_source("links", path, **params)
 
         scraper.scrape()
-        source = scraper.sources["links:" + path]
+        source = scraper.sources[f"links:{path}"]
         if source.state == source.STATE_ERROR:
             raise CommandError('Unable to scrape links on "%s".' % path)

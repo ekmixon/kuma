@@ -124,8 +124,7 @@ class FixtureLoader(object):
 
                 # Parse and validate the remaining properties
                 for name, value in item.items():
-                    relation = relations.get(name, {})
-                    if relation:
+                    if relation := relations.get(name, {}):
                         if relation["link"] == "to_one":
                             data["relations"][name] = tuple(value)
                         else:
@@ -208,8 +207,7 @@ class FixtureLoader(object):
 
         # Check for required relations in the natural key
         for name, key in zip(natural_key_spec, item["key"]):
-            relation = relations.get(name, {})
-            if relation:
+            if relation := relations.get(name, {}):
                 instances = self.instances.get(relation["resource"], {})
                 if key not in instances:
                     raise self.NeedsDependency(relation, key)
@@ -217,10 +215,7 @@ class FixtureLoader(object):
         # Check for required relations in other properties
         for name, value in item["relations"].items():
             relation = relations[name]
-            if relation["link"] == "to_one":
-                required = [value]
-            else:
-                required = value
+            required = [value] if relation["link"] == "to_one" else value
             instances = self.instances.get(relation["resource"], {})
             for key in required:
                 if key not in instances:
@@ -229,8 +224,7 @@ class FixtureLoader(object):
         # Prepare the items in the key
         key_dict = {}
         for name, key in zip(natural_key_spec, item["key"]):
-            relation = relations.get(name, {})
-            if relation:
+            if relation := relations.get(name, {}):
                 rel = self.instances[relation["resource"]][key]
                 key_dict[name] = rel
             else:

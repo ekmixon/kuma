@@ -84,8 +84,7 @@ def whoami(request):
     geo = {}
     # https://aws.amazon.com/about-aws/whats-new/2020/07/cloudfront-geolocation-headers/
     cloudfront_country_header = "HTTP_CLOUDFRONT_VIEWER_COUNTRY_NAME"
-    cloudfront_country_value = request.META.get(cloudfront_country_header)
-    if cloudfront_country_value:
+    if cloudfront_country_value := request.META.get(cloudfront_country_header):
         geo["country"] = cloudfront_country_value
     if geo:
         data["geo"] = geo
@@ -203,15 +202,15 @@ def subscriptions(request):
         )
         return Response(None, status=status.HTTP_201_CREATED)
     elif request.method == "DELETE":
-        cancelled = cancel_stripe_customer_subscriptions(request.user)
-        if cancelled:
+        if cancelled := cancel_stripe_customer_subscriptions(request.user):
             return Response(None, status=status.HTTP_204_NO_CONTENT)
         else:
             return Response("nothing to cancel", status=status.HTTP_410_GONE)
 
     all_subscriptions = []
-    subscription_info = retrieve_and_synchronize_subscription_info(request.user)
-    if subscription_info:
+    if subscription_info := retrieve_and_synchronize_subscription_info(
+        request.user
+    ):
         all_subscriptions.append(subscription_info)
 
     return Response({"subscriptions": all_subscriptions})
@@ -350,10 +349,9 @@ def sendinblue_hooks(request):
             f"{exception.__class__.__name__} on {request.body}"
         )
 
-    if event == "unsubscribe":
-        refresh_is_user_newsletter_subscribed(email)
-        return HttpResponse()
-    else:
+    if event != "unsubscribe":
         return HttpResponseBadRequest(
             f"We did not expect a Sendinblue webhook of type {event['event']!r}"
         )
+    refresh_is_user_newsletter_subscribed(email)
+    return HttpResponse()

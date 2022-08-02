@@ -30,8 +30,7 @@ class Command(BaseCommand):
             template_string += "{{ _('%s') }}\n" % lang
 
         jinja_path = settings.TEMPLATES[0]["DIRS"][0]
-        template_path = jinja_path + "/includes/translate_locales.html"
+        template_path = f"{jinja_path}/includes/translate_locales.html"
 
-        outfile = open(template_path, "w")
-        outfile.write(template_string.encode("utf8"))
-        outfile.close()
+        with open(template_path, "w") as outfile:
+            outfile.write(template_string.encode("utf8"))

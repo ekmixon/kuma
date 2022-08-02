@@ -656,13 +656,13 @@ def _get_current_form_field_values(doc):
         "is_github_url_public",
         "is_newsletter_subscribed",
     )
-    form = dict()
+    form = {}
     lookup_pattern = '#{prefix}edit *[name="{prefix}{field}"]'
     prefix = "user-"
     for field in fields:
         lookup = lookup_pattern.format(prefix=prefix, field=field)
         elements = doc.find(lookup)
-        assert len(elements) == 1, "field = {}".format(field)
+        assert len(elements) == 1, f"field = {field}"
         element = elements[0]
         if element.type == "text":
             form[prefix + field] = element.value
@@ -670,8 +670,8 @@ def _get_current_form_field_values(doc):
             assert element.type == "checkbox"
             form[prefix + field] = element.checked
 
-    form[prefix + "country"] = "us"
-    form[prefix + "format"] = "html"
+    form[f"{prefix}country"] = "us"
+    form[f"{prefix}format"] = "html"
     return form
 
 
@@ -689,8 +689,9 @@ def test_user_detail_view(wiki_user, client):
     assert doc.find("#user-head.vcard .title").text() == wiki_user.title
     assert doc.find("#user-head.vcard .org").text() == wiki_user.organization
     assert doc.find("#user-head.vcard .loc").text() == wiki_user.location
-    assert doc.find("#user-head.vcard .irc").text() == (
-        "IRC: " + wiki_user.irc_nickname
+    assert (
+        doc.find("#user-head.vcard .irc").text()
+        == f"IRC: {wiki_user.irc_nickname}"
     )
 
 
@@ -830,7 +831,7 @@ def test_user_edit_websites(wiki_user, wiki_user_github_account, user_client):
     form = _get_current_form_field_values(doc)
 
     # Fill out the form with websites.
-    form.update(dict(("user-%s_url" % k, v) for k, v in test_sites.items()))
+    form.update({f"user-{k}_url": v for k, v in test_sites.items()})
 
     # Filter out keys with `None` values
     form = {k: v for k, v in form.items() if v is not None}
@@ -845,7 +846,7 @@ def test_user_edit_websites(wiki_user, wiki_user_github_account, user_client):
 
     # Verify the websites are saved in the user.
     for site, site_url in test_sites.items():
-        url_attr_name = "%s_url" % site
+        url_attr_name = f"{site}_url"
         assert getattr(wiki_user, url_attr_name) == site_url
 
     # Verify the saved websites appear in the editing form
@@ -866,7 +867,7 @@ def test_user_edit_websites(wiki_user, wiki_user_github_account, user_client):
         "twitter": "http://facebook.com/lmorchard",
         "stackoverflow": "http://overqueueblah.com/users/lmorchard",
     }
-    form.update(dict(("user-%s_url" % k, v) for k, v in bad_sites.items()))
+    form |= {f"user-{k}_url": v for k, v in bad_sites.items()}
 
     # Submit the form, verify errors for all of the bad sites
     response = user_client.post(url, form, follow=True)
@@ -884,7 +885,7 @@ def test_bug_698126_l10n(wiki_user, user_client):
     for field in response.context["user_form"].fields:
         # if label is localized it's a lazy proxy object
         lbl = response.context["user_form"].fields[field].label
-        assert not isinstance(lbl, str), "Field %s is a string!" % field
+        assert not isinstance(lbl, str), f"Field {field} is a string!"
 
 
 def test_user_edit_github_is_public(wiki_user, wiki_user_github_account, user_client):

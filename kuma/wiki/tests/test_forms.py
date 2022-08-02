@@ -515,8 +515,7 @@ class RevisionFormCreateTests(RevisionFormViewTests):
         mock_requests.post(CHECK_URL, content=is_spam)
 
         parent_slug = "Web/Guide"
-        rev_form = RevisionForm(request=request, data=data, parent_slug=parent_slug)
-        return rev_form
+        return RevisionForm(request=request, data=data, parent_slug=parent_slug)
 
     @requests_mock.mock()
     def test_standard_new(self, mock_requests):

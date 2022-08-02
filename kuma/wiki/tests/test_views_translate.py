@@ -64,11 +64,15 @@ def test_translate_post(root_doc, trans_doc_client):
     assert response["X-Robots-Tag"] == "noindex"
     assert_no_cache_header(response)
     doc_url = reverse("wiki.document", args=(root_doc.slug,), locale="fr")
-    assert doc_url + "?rev_saved=" in response["Location"]
+    assert f"{doc_url}?rev_saved=" in response["Location"]
     assert len(Document.objects.filter(locale="fr", slug=root_doc.slug)) == 1
     # Ensure there is no redirect.
     assert (
-        len(Document.objects.filter(title=root_doc.title + " Redirect 1", locale="fr"))
+        len(
+            Document.objects.filter(
+                title=f"{root_doc.title} Redirect 1", locale="fr"
+            )
+        )
         == 0
     )
 
@@ -115,7 +119,7 @@ def test_translate_over_deleted_document_different_slug(root_doc, trans_doc_clie
     worked.
     """
     # Create the soft-delete document that would otherwise "be in the way".
-    french_slug = root_doc.slug + "frenchness"
+    french_slug = f"{root_doc.slug}frenchness"
     Document.objects.create(slug=french_slug, locale="fr", parent=root_doc).delete()
 
     data = {

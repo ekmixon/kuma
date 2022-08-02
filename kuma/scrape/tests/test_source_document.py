@@ -71,7 +71,7 @@ def test_gather_forced():
 def test_gather_child_doc():
     """A child document requires the parent document."""
     parent_path = "/en-US/docs/Root"
-    child_path = parent_path + "/Child"
+    child_path = f"{parent_path}/Child"
     source = DocumentSource(child_path)
     storage = mock_storage(spec=["get_document", "get_document_redirect"])
     resources = source.gather(None, storage)
@@ -85,7 +85,7 @@ def test_gather_child_doc():
 def test_gather_child_doc_parent_in_storage():
     """If the parent document is available, it is not requested."""
     parent_path = "/en-US/docs/Root"
-    child_path = parent_path + "/Child"
+    child_path = f"{parent_path}/Child"
     source = DocumentSource(child_path, force=True)
     storage = mock_storage(spec=["get_document", "get_document_redirect"])
     storage.get_document.return_value = "parent document"
@@ -152,8 +152,9 @@ def test_gather_standard_doc_all_prereqs():
     storage.get_document_redirect.return_value = {}  # Standard doc
     storage.get_document_metadata.return_value = doc_metadata
     storage.get_document_history.return_value = [
-        ("revisions", path + "$revision/2016", {})
+        ("revisions", f"{path}$revision/2016", {})
     ]
+
     resources = source.gather(None, storage)
     assert resources == [("document_current", path, {"revisions": 1})]
     assert source.state == source.STATE_DONE
@@ -178,8 +179,9 @@ def test_gather_standard_doc_metdata_loses():
     metadata["slug"] = "TEST"
     storage.get_document_metadata.return_value = metadata
     storage.get_document_history.return_value = [
-        ("revisions", path + "$revision/2016", {})
+        ("revisions", f"{path}$revision/2016", {})
     ]
+
     resources = source.gather(None, storage)
     assert resources == [("document_current", path, {"revisions": 1})]
     assert source.state == source.STATE_DONE
@@ -198,8 +200,9 @@ def test_gather_standard_doc_bad_metadata():
     metadata["error"] = True
     storage.get_document_metadata.return_value = metadata
     storage.get_document_history.return_value = [
-        ("revisions", path + "$revision/2016", {})
+        ("revisions", f"{path}$revision/2016", {})
     ]
+
     resources = source.gather(None, storage)
     assert resources == []
     assert source.state == source.STATE_ERROR
@@ -221,8 +224,9 @@ def test_gather_standard_doc_no_uuid():
     del metadata["uuid"]
     storage.get_document_metadata.return_value = metadata
     storage.get_document_history.return_value = [
-        ("revisions", path + "$revision/2016", {})
+        ("revisions", f"{path}$revision/2016", {})
     ]
+
 
     resources = source.gather(None, storage)
     assert resources == [("document_current", path, {"revisions": 1})]
@@ -280,8 +284,9 @@ def test_gather_localized_doc_without_metadata():
     )
     storage.get_document_redirect.return_value = {}
     storage.get_document_history.return_value = [
-        ("revisions", path + "$revision/2020", {})
+        ("revisions", f"{path}$revision/2020", {})
     ]
+
     resources = source.gather(None, storage)
     assert resources == [("document_meta", path, {"force": True})]
     assert source.state == source.STATE_PREREQ
@@ -311,8 +316,9 @@ def test_gather_localized_doc_with_metadata():
     ]
     storage.get_document_metadata.return_value = metadata
     storage.get_document_history.return_value = [
-        ("revisions", path + "$revision/2020", {})
+        ("revisions", f"{path}$revision/2020", {})
     ]
+
     resources = source.gather(None, storage)
     assert resources == [("document", "/en-US/docs/Root", {})]
     assert source.state == source.STATE_PREREQ
@@ -335,8 +341,9 @@ def test_gather_localized_doc_invalid_english():
     ]
     storage.get_document_metadata.return_value = metadata
     storage.get_document_history.return_value = [
-        ("revisions", path + "$revision/2020", {})
+        ("revisions", f"{path}$revision/2020", {})
     ]
+
     resources = source.gather(None, storage)
     assert resources == []
     assert source.state == source.STATE_ERROR
@@ -366,8 +373,9 @@ def test_gather_localized_doc_sets_parent():
     storage.get_document.return_value = "English document"
     storage.get_document_metadata.return_value = metadata
     storage.get_document_history.return_value = [
-        ("revisions", path + "$revision/2020", {})
+        ("revisions", f"{path}$revision/2020", {})
     ]
+
     resources = source.gather(None, storage)
     assert resources == [("document_current", path, {"revisions": 1})]
     assert source.state == source.STATE_DONE
@@ -396,8 +404,9 @@ def test_gather_document_children():
     storage.get_document_redirect.return_value = {}  # Standard doc
     storage.get_document_metadata.return_value = doc_metadata
     storage.get_document_history.return_value = [
-        ("revisions", doc_path + "$revision/2016", {})
+        ("revisions", f"{doc_path}$revision/2016", {})
     ]
+
     resources = source.gather(None, storage)
     assert resources == [("document_children", doc_path, {"depth": 1, "force": True})]
     assert source.state == source.STATE_PREREQ
@@ -420,8 +429,9 @@ def test_gather_document_children_loaded():
     storage.get_document_redirect.return_value = {}  # Standard doc
     storage.get_document_metadata.return_value = doc_metadata
     storage.get_document_history.return_value = [
-        ("revisions", doc_path + "$revision/2016", {})
+        ("revisions", f"{doc_path}$revision/2016", {})
     ]
+
     storage.get_document_children.return_value = []
     resources = source.gather(None, storage)
     assert resources == [("document_current", doc_path, {"revisions": 1})]

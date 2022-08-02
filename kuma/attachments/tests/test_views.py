@@ -45,10 +45,9 @@ class AttachmentViewTests(UserTestCase, WikiTestCase):
             "comment": "Initial upload",
             "file": file_for_upload,
         }
-        response = self.client.post(
+        return self.client.post(
             self.files_url, data=post_data, HTTP_HOST=settings.WIKI_HOST
         )
-        return response
 
     def test_edit_attachment(self):
         response = self._post_attachment()

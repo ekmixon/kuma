@@ -35,11 +35,12 @@ def test_notification_context_for_create(create_revision):
     }
 
     expected_urls = {
-        "edit_url": order_params(url + "$edit" + utm_campaign),
-        "history_url": order_params(url + "$history" + utm_campaign),
+        "edit_url": order_params(f"{url}$edit{utm_campaign}"),
+        "history_url": order_params(f"{url}$history{utm_campaign}"),
         "user_url": order_params(user_url + utm_campaign),
         "view_url": order_params(url + utm_campaign),
     }
+
 
     assert_expectations_url(context, expected, expected_urls)
 
@@ -87,11 +88,12 @@ def test_notification_context_for_edit(create_revision, edit_revision):
 
     expected_urls = {
         "compare_url": order_params(compare_url),
-        "edit_url": order_params(url + "$edit" + utm_campaign),
-        "history_url": order_params(url + "$history" + utm_campaign),
+        "edit_url": order_params(f"{url}$edit{utm_campaign}"),
+        "history_url": order_params(f"{url}$history{utm_campaign}"),
         "user_url": order_params(user_url + utm_campaign),
         "view_url": url + utm_campaign,
     }
+
 
     assert_expectations_url(context, expected, expected_urls)
 
@@ -138,11 +140,12 @@ def test_notification_context_for_translation(trans_revision, create_revision):
 
     expected_urls = {
         "compare_url": order_params(compare_url),
-        "edit_url": order_params(url + "$edit" + utm_campaign),
-        "history_url": order_params(url + "$history" + utm_campaign),
+        "edit_url": order_params(f"{url}$edit{utm_campaign}"),
+        "history_url": order_params(f"{url}$history{utm_campaign}"),
         "user_url": order_params(user_url + utm_campaign),
         "view_url": order_params(url + utm_campaign),
     }
+
 
     assert_expectations_url(context, expected, expected_urls)
 

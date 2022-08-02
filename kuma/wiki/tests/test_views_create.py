@@ -168,8 +168,8 @@ def test_create_child_valid(root_doc, add_doc_client, slug):
         toc_depth=1,
     )
     url = reverse("wiki.create")
-    url += "?parent={}".format(root_doc.id)
-    full_slug = "{}/{}".format(root_doc.slug, slug)
+    url += f"?parent={root_doc.id}"
+    full_slug = f"{root_doc.slug}/{slug}"
     resp = add_doc_client.post(url, data, HTTP_HOST=settings.WIKI_HOST)
     assert resp.status_code == 302
     assert resp["X-Robots-Tag"] == "noindex"
@@ -206,8 +206,8 @@ def test_create_child_invalid(root_doc, add_doc_client, slug):
         toc_depth=1,
     )
     url = reverse("wiki.create")
-    url += "?parent={}".format(root_doc.id)
-    full_slug = "{}/{}".format(root_doc.slug, slug)
+    url += f"?parent={root_doc.id}"
+    full_slug = f"{root_doc.slug}/{slug}"
     resp = add_doc_client.post(url, data, HTTP_HOST=settings.WIKI_HOST)
     assert resp.status_code == 200
     assert resp["X-Robots-Tag"] == "noindex"
@@ -221,7 +221,7 @@ def test_create_child_invalid(root_doc, add_doc_client, slug):
 
 def test_clone_get(root_doc, add_doc_client):
     url = reverse("wiki.create")
-    url += "?clone={}".format(root_doc.id)
+    url += f"?clone={root_doc.id}"
     response = add_doc_client.get(url, HTTP_HOST=settings.WIKI_HOST)
     assert response.status_code == 200
     assert response["X-Robots-Tag"] == "noindex"

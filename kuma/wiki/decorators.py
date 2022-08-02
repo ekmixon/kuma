@@ -29,7 +29,7 @@ def allow_CORS_GET(func):
     def _added_header(request, *args, **kwargs):
         response = func(request, *args, **kwargs)
 
-        if "GET" == request.method:
+        if request.method == "GET":
             response["Access-Control-Allow-Origin"] = "*"
         return response
 

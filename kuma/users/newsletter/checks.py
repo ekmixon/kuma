@@ -33,16 +33,18 @@ def create_missing_attributes(existing_attributes, required_attributes):
 
 def create_sendinblue_attributes():
     response = sendinblue.request("GET", "contacts/attributes")
-    if not response.ok:
-        return [
+    return (
+        create_missing_attributes(
+            response.json()["attributes"],
+            {"USERNAME": "text", "IS_PAYING": "boolean"},
+        )
+        if response.ok
+        else [
             Error(
                 f"Error getting sendinblue attributes: {response.status_code}",
                 id=SENDINBLUE_API_ERROR,
             )
         ]
-
-    return create_missing_attributes(
-        response.json()["attributes"], {"USERNAME": "text", "IS_PAYING": "boolean"}
     )
 
 
@@ -54,10 +56,11 @@ EMAIL_TYPE = "marketing"
 def create_sendinblue_unsubscribe_webhook():
     url_path = reverse("api.v1.sendinblue_hooks")
     url = (
-        "https://" + settings.CUSTOM_WEBHOOK_HOSTNAME + url_path
+        f"https://{settings.CUSTOM_WEBHOOK_HOSTNAME}{url_path}"
         if settings.CUSTOM_WEBHOOK_HOSTNAME
         else absolutify(url_path)
     )
+
 
     # From https://developers.sendinblue.com/reference#createwebhook
     # "Occurs whenever a user unsubscribes through an email's subscription management link."
@@ -82,19 +85,22 @@ def create_sendinblue_unsubscribe_webhook():
     response = sendinblue.request(
         "POST", "webhooks", json={"url": url, "events": events, "type": EMAIL_TYPE}
     )
-    if not response.ok:
-        return [
+    return (
+        []
+        if response.ok
+        else [
             Error(
                 f"Error creating sendinblue webhook: {response.status_code}",
                 id=SENDINBLUE_API_ERROR,
             )
         ]
-
-    return []
+    )
 
 
 def sendinblue_check(app_configs, **kwargs):
-    if not settings.SENDINBLUE_API_KEY:
-        return []
-
-    return create_sendinblue_attributes() + create_sendinblue_unsubscribe_webhook()
+    return (
+        create_sendinblue_attributes()
+        + create_sendinblue_unsubscribe_webhook()
+        if settings.SENDINBLUE_API_KEY
+        else []
+    )

@@ -167,8 +167,9 @@ class KumaSocialAccountAdapterTestCase(UserTestCase):
 
         # Set up an un-matching GitHub SocialLogin for request
         github2_account = SocialAccount(
-            user=self.user_model(), provider="github", uid=github_account.uid + "2"
+            user=self.user_model(), provider="github", uid=f"{github_account.uid}2"
         )
+
         github2_login = SocialLogin(account=github2_account)
 
         self.adapter.pre_social_login(request, github2_login)

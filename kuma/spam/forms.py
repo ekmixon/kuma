@@ -113,7 +113,7 @@ class AkismetSubmissionFormMixin(AkismetFormMixin):
         """ "
         Get the submission function and call it with the parameters.
         """
-        submission_function = "submit_%s" % self.akismet_submission_type()
+        submission_function = f"submit_{self.akismet_submission_type()}"
         try:
             getattr(self.akismet_client, submission_function)(**parameters)
         except akismet.AkismetError as exception:

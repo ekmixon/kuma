@@ -111,7 +111,7 @@ def wiki_user_github_account(wiki_user):
         extra_data=dict(
             email=wiki_user.email,
             avatar_url="https://avatars0.githubusercontent.com/yada/yada",
-            html_url="https://github.com/{}".format(wiki_user.username),
+            html_url=f"https://github.com/{wiki_user.username}",
         ),
     )
 

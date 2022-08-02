@@ -139,9 +139,10 @@ def test_documents_filter_for_list_by_toplevel(root_doc):
     Document.objects.create(
         locale=root_doc.locale,
         parent_topic=root_doc,
-        slug=root_doc.slug + "/Child",
+        slug=f"{root_doc.slug}/Child",
         title="Child Document",
     )
+
     assert len(Document.objects.filter_for_list()) == 2
     assert list(Document.objects.filter_for_list(toplevel=True)) == [root_doc]
 

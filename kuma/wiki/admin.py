@@ -66,7 +66,7 @@ def purge_view(request):
             for doc in to_purge:
                 doc.purge()
                 purged += 1
-            messages.info(request, "%s document(s) were purged." % purged)
+            messages.info(request, f"{purged} document(s) were purged.")
         return HttpResponseRedirect("/admin/wiki/document/")
     return TemplateResponse(
         request, "admin/wiki/purge_documents.html", {"to_purge": to_purge}
@@ -84,7 +84,7 @@ restore_documents.short_description = "Restore deleted documents"
 def enable_deferred_rendering_for_documents(self, request, queryset):
     queryset.update(defer_rendering=True)
     self.message_user(
-        request, "Enabled deferred rendering for %s Documents" % queryset.count()
+        request, f"Enabled deferred rendering for {queryset.count()} Documents"
     )
 
 
@@ -96,7 +96,8 @@ enable_deferred_rendering_for_documents.short_description = (
 def disable_deferred_rendering_for_documents(self, request, queryset):
     queryset.update(defer_rendering=False)
     self.message_user(
-        request, "Disabled deferred rendering for %s Documents" % queryset.count()
+        request,
+        f"Disabled deferred rendering for {queryset.count()} Documents",
     )
 
 
@@ -115,7 +116,7 @@ def force_render_documents(self, request, queryset):
             bad_count += 1
     self.message_user(
         request,
-        "Rendered %s documents, failed on %s " "documents." % (count, bad_count),
+        f"Rendered {count} documents, failed on {bad_count} documents.",
     )
 
 
@@ -146,10 +147,11 @@ def related_revisions_link(obj):
     """HTML link to related revisions for admin change list"""
     link = "%s?%s" % (
         reverse("admin:wiki_revision_changelist", args=[]),
-        "document__exact=%s" % (obj.id),
+        f"document__exact={obj.id}",
     )
+
     count = obj.revisions.count()
-    what = (count == 1) and "revision" or "revisions"
+    what = "revision" if count == 1 else "revisions"
     return format_html('<a href="{}">{}&nbsp;{}</a>', link, count, what)
 
 
@@ -203,8 +205,9 @@ def topic_children_documents_link(obj):
         return ""
     link = "%s?%s" % (
         reverse("admin:wiki_document_changelist", args=[]),
-        "parent_topic__exact=%s" % (obj.id),
+        f"parent_topic__exact={obj.id}",
     )
+
     what = "child" if count == 1 else "children"
     return format_html('<a href="{}">{}&nbsp;{}</a>', link, count, what)
 
@@ -221,8 +224,9 @@ def topic_sibling_documents_link(obj):
         return ""
     link = "%s?%s" % (
         reverse("admin:wiki_document_changelist", args=[]),
-        "parent_topic__exact=%s" % (obj.parent_topic.id),
+        f"parent_topic__exact={obj.parent_topic.id}",
     )
+
     what = "sibling" if count == 1 else "siblings"
     return format_html('<a href="{}">{}&nbsp;{}</a>', link, count, what)
 
@@ -466,17 +470,17 @@ class DocumentSpamAttemptAdmin(admin.ModelAdmin):
 
         /en-US/docs/Start/Of/Slug… (The start of the title…)
         """
-        doc = obj.document
-        if doc:
-            full_path = "/%s/docs/%s" % (doc.locale, doc.slug)
-            if len(full_path) <= self.MAX_LENGTH:
-                path = full_path
-            else:
-                path = Truncator(full_path).chars(self.MAX_LENGTH, "…")
-            title = Truncator(doc.title).chars(self.MAX_LENGTH, "…")
-            return "%s (%s)" % (path, title)
-        else:
+        if not (doc := obj.document):
             return mark_safe("<em>new document</em>")
+        full_path = f"/{doc.locale}/docs/{doc.slug}"
+        path = (
+            full_path
+            if len(full_path) <= self.MAX_LENGTH
+            else Truncator(full_path).chars(self.MAX_LENGTH, "…")
+        )
+
+        title = Truncator(doc.title).chars(self.MAX_LENGTH, "…")
+        return f"{path} ({title})"
 
     doc_short.short_description = "Document (if edit)"
 
@@ -514,13 +518,10 @@ class DocumentSpamAttemptAdmin(admin.ModelAdmin):
                 obj.reviewer = None
                 obj.reviewed = None
                 obj.review = DocumentSpamAttempt.NEEDS_REVIEW
-                message = "Unable to submit ham for document spam attempt %s: %s" % (
-                    obj,
-                    error,
-                )
+                message = f"Unable to submit ham for document spam attempt {obj}: {error}"
                 self.message_user(request, message, level=messages.ERROR)
             else:
-                message = "Submitted ham for document spam attempt %s" % obj
+                message = f"Submitted ham for document spam attempt {obj}"
                 self.message_user(request, message, level=messages.INFO)
         obj.save()
 
@@ -590,10 +591,7 @@ class RevisionAkismetSubmissionAdmin(DisabledDeletionMixin, admin.ModelAdmin):
         """
         Hook for specifying custom readonly fields.
         """
-        if obj:
-            return ["type", "revision", "sender", "sent"]
-        else:
-            return ["sender", "sent"]
+        return ["type", "revision", "sender", "sent"] if obj else ["sender", "sent"]
 
     def save_model(self, request, obj, form, change):
         obj.sender = request.user
@@ -632,19 +630,13 @@ class RevisionAkismetSubmissionAdmin(DisabledDeletionMixin, admin.ModelAdmin):
 
     def submitted_data(self, request, obj_id=None):
         """Display Akismet data, if saved at edit time."""
-        if obj_id:
-            obj = RevisionAkismetSubmission.objects.get(id=obj_id)
-        else:
-            obj = None
-
+        obj = RevisionAkismetSubmission.objects.get(id=obj_id) if obj_id else None
         if obj and obj.revision_id:
             revision_ip = obj.revision.revisionip_set.first()
+        elif revision_id := request.GET.get("revision"):
+            revision_ip = RevisionIP.objects.filter(revision_id=revision_id).first()
         else:
-            revision_id = request.GET.get("revision")
-            if revision_id:
-                revision_ip = RevisionIP.objects.filter(revision_id=revision_id).first()
-            else:
-                revision_ip = None
+            revision_ip = None
         return akismet_data_as_dl(revision_ip and revision_ip.data)
 
 

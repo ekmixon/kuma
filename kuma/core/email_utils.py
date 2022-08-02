@@ -121,9 +121,5 @@ def emails_with_users_and_watches(
         return msg
 
     for user, watch in users_and_watches:
-        if hasattr(user, "locale"):
-            locale = user.locale
-        else:
-            locale = default_locale
-
+        locale = user.locale if hasattr(user, "locale") else default_locale
         yield _make_mail(locale, user, watch)

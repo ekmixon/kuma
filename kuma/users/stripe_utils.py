@@ -43,10 +43,10 @@ def retrieve_and_synchronize_subscription_info(user):
     our webhooks have failed us.
     """
     subscription_info = None
-    stripe_customer = get_stripe_customer(user)
-    if stripe_customer:
-        stripe_subscription_info = get_stripe_subscription_info(stripe_customer)
-        if stripe_subscription_info:
+    if stripe_customer := get_stripe_customer(user):
+        if stripe_subscription_info := get_stripe_subscription_info(
+            stripe_customer
+        ):
             source = stripe_customer.default_source
             if source.object == "card":
                 card = source
@@ -139,10 +139,11 @@ def get_stripe_subscription_info(stripe_customer):
 def create_missing_stripe_webhook():
     url_path = reverse("api.v1.stripe_hooks")
     url = (
-        "https://" + settings.CUSTOM_WEBHOOK_HOSTNAME + url_path
+        f"https://{settings.CUSTOM_WEBHOOK_HOSTNAME}{url_path}"
         if settings.CUSTOM_WEBHOOK_HOSTNAME
         else absolutify(url_path)
     )
+
 
     # From https://stripe.com/docs/api/webhook_endpoints/create
     events = (

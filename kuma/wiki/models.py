@@ -106,9 +106,7 @@ def valid_slug_parent(slug, locale):
         try:
             parent = Document.objects.get(locale=locale, slug=parent_slug)
         except Document.DoesNotExist:
-            raise Exception(
-                gettext("Parent %s does not exist." % ("%s/%s" % (locale, parent_slug)))
-            )
+            raise Exception(gettext(f"Parent {locale}/{parent_slug} does not exist."))
 
     return parent
 
@@ -129,9 +127,9 @@ def tags_for(cls, model, instance=None, **extra_filters):
     """
     kwargs = extra_filters or {}
     if instance is not None:
-        kwargs.update({"%s__content_object" % cls.tag_relname(): instance})
+        kwargs.update({f"{cls.tag_relname()}__content_object": instance})
         return cls.tag_model().objects.filter(**kwargs)
-    kwargs.update({"%s__content_object__isnull" % cls.tag_relname(): False})
+    kwargs.update({f"{cls.tag_relname()}__content_object__isnull": False})
     return cls.tag_model().objects.filter(**kwargs).distinct()
 
 
@@ -335,7 +333,7 @@ class Document(NotificationsMixin, models.Model):
     admin_objects = DocumentAdminManager()
 
     def __str__(self):
-        return "%s (%s)" % (self.get_absolute_url(), self.title)
+        return f"{self.get_absolute_url()} ({self.title})"
 
     @cache_with_field("body_html")
     def get_body_html(self, *args, **kwargs):
@@ -414,8 +412,7 @@ class Document(NotificationsMixin, models.Model):
             try:
                 # Check if the slug belongs to any default language document
                 doc = doc.get(locale=settings.WIKI_DEFAULT_LANGUAGE, slug=slug)
-                translation = doc.translated_to(locale)
-                if translation:
+                if translation := doc.translated_to(locale):
                     return translation
             except cls.DoesNotExist:
                 return None
@@ -437,19 +434,14 @@ class Document(NotificationsMixin, models.Model):
         """
         Convenience method to extract the rendered content for a single section
         """
-        if self.rendered_html:
-            content = self.rendered_html
-        else:
-            content = self.html
+        content = self.rendered_html or self.html
         return self.extract.section(content, section_id, ignore_heading, annotate_links)
 
     def get_html(self, section_id=None):
         """
         Get the document's html attribute or a section of it.
         """
-        if section_id:
-            return self.extract.section(self.html, section_id)
-        return self.html
+        return self.extract.section(self.html, section_id) if section_id else self.html
 
     def current_or_latest_revision(self):
         """Returns current revision if there is one, else the last created
@@ -475,9 +467,11 @@ class Document(NotificationsMixin, models.Model):
         if duration > max_duration:
             return False
 
-        if not self.last_rendered_at:
-            return True
-        return self.render_scheduled_at > self.last_rendered_at
+        return (
+            self.render_scheduled_at > self.last_rendered_at
+            if self.last_rendered_at
+            else True
+        )
 
     @property
     def is_rendering_in_progress(self):
@@ -494,13 +488,11 @@ class Document(NotificationsMixin, models.Model):
         if duration > max_duration:
             return False
 
-        if not self.last_rendered_at:
-            # No rendering ever, so in progress.
-            return True
-
-        # Finally, if the render start is more recent than last completed
-        # render, then we have one in progress.
-        return self.render_started_at > self.last_rendered_at
+        return (
+            self.render_started_at > self.last_rendered_at
+            if self.last_rendered_at
+            else True
+        )
 
     @newrelic.agent.function_trace()
     def get_rendered(self, cache_control=None, base_url=None):
@@ -636,10 +628,7 @@ class Document(NotificationsMixin, models.Model):
         Attempt to get the document summary from rendered content, with
         fallback to raw HTML
         """
-        if use_rendered and self.rendered_html:
-            src = self.rendered_html
-        else:
-            src = self.html
+        src = self.rendered_html if use_rendered and self.rendered_html else self.html
         return get_seo_description(src, self.locale, strip_markup)
 
     def build_json_data(self):
@@ -657,10 +646,7 @@ class Document(NotificationsMixin, models.Model):
                 revision = translation.current_revision
                 if not revision:
                     continue
-                if revision.summary:
-                    summary = revision.summary
-                else:
-                    summary = translation.get_summary(strip_markup=False)
+                summary = revision.summary or translation.get_summary(strip_markup=False)
                 translations.append(
                     {
                         "last_edit": revision.created.isoformat(),
@@ -686,18 +672,10 @@ class Document(NotificationsMixin, models.Model):
             last_edit = ""
             summary = ""
 
-        if not self.pk:
-            tags = []
-        else:
-            tags = list(self.tags.names())
-
+        tags = list(self.tags.names()) if self.pk else []
         now_iso = datetime.now().isoformat()
 
-        if self.modified:
-            modified = self.modified.isoformat()
-        else:
-            modified = now_iso
-
+        modified = self.modified.isoformat() if self.modified else now_iso
         return {
             "title": self.title,
             "label": self.title,
@@ -765,7 +743,7 @@ class Document(NotificationsMixin, models.Model):
 
     def _raise_if_collides(self, attr, exception):
         """Raise an exception if a page of this title/slug already exists."""
-        if self.id is None or hasattr(self, "old_" + attr):
+        if self.id is None or hasattr(self, f"old_{attr}"):
             # If I am new or my title/slug changed...
             existing = self._existing(attr, getattr(self, attr))
             if existing.exists():
@@ -824,10 +802,10 @@ class Document(NotificationsMixin, models.Model):
             revision.pk = None
 
             # add a sensible comment
-            revision.comment = "Revert to revision of %s by %s" % (
-                revision.created,
-                revision.creator,
+            revision.comment = (
+                f"Revert to revision of {revision.created} by {revision.creator}"
             )
+
             if comment:
                 revision.comment = '%s: "%s"' % (revision.comment, comment)
             revision.created = datetime.now()
@@ -872,8 +850,7 @@ class Document(NotificationsMixin, models.Model):
         new_tags = data.get("tags", False)
         new_rev.tags = new_tags or edit_string_for_tags(self.tags.all())
 
-        new_review_tags = data.get("review_tags", False)
-        if new_review_tags:
+        if new_review_tags := data.get("review_tags", False):
             review_tags = new_review_tags
         elif curr_rev:
             review_tags = edit_string_for_tags(curr_rev.review_tags.all())
@@ -885,9 +862,7 @@ class Document(NotificationsMixin, models.Model):
         # To add comment, when Technical/Editorial review completed
         new_rev.comment = data.get("comment", "")
 
-        # Accept HTML edits, optionally by section
-        new_html = data.get("content", data.get("html", False))
-        if new_html:
+        if new_html := data.get("content", data.get("html", False)):
             if not section_id:
                 new_rev.content = new_html
             else:
@@ -938,8 +913,9 @@ class Document(NotificationsMixin, models.Model):
     def purge(self):
         if not self.deleted:
             raise Exception(
-                "Attempt to purge non-deleted document %s: %s" % (self.id, self.title)
+                f"Attempt to purge non-deleted document {self.id}: {self.title}"
             )
+
         self.delete(purge=True)
 
     def restore(self):
@@ -1210,10 +1186,7 @@ Full traceback:
                     # HACK: Let's auto-add tags that flag this as a topic stub
                     stub_tags = '"TopicStub","NeedsTranslation"'
                     stub_l10n_tags = ["inprogress"]
-                    if new_rev.tags:
-                        new_rev.tags = "%s,%s" % (new_rev.tags, stub_tags)
-                    else:
-                        new_rev.tags = stub_tags
+                    new_rev.tags = f"{new_rev.tags},{stub_tags}" if new_rev.tags else stub_tags
                     new_rev.save()
                     new_rev.localization_tags.add(*stub_l10n_tags)
 
@@ -1315,8 +1288,7 @@ Full traceback:
         # with hrefs, return the href of the first one. This trick saves us
         # from having to parse the HTML every time.
         if REDIRECT_HTML in self.html:
-            anchors = PyQuery(self.html)("a[href].redirect")
-            if anchors:
+            if anchors := PyQuery(self.html)("a[href].redirect"):
                 url = anchors[0].get("href")
                 # allow explicit domain and *not* '//'
                 # i.e allow "https://developer...." and "/en-US/docs/blah"
@@ -1334,8 +1306,7 @@ Full traceback:
         """If I am a redirect to a Document, return that Document.
         Otherwise, return None.
         """
-        url = self.get_redirect_url()
-        if url:
+        if url := self.get_redirect_url():
             return self.from_url(url, id_only=id_only)
 
     def get_topic_parents(self):
@@ -1410,14 +1381,13 @@ Full traceback:
         """
         if not self.parent_id:
             return list(self.translations.all().order_by("locale").only(*fields))
-        else:
-            translations = list(
-                self.parent.translations.exclude(id=self.id)
-                .order_by("locale")
-                .only(*fields)
-            )
-            # The parent doc should be at first
-            return [self.parent] + translations
+        translations = list(
+            self.parent.translations.exclude(id=self.id)
+            .order_by("locale")
+            .only(*fields)
+        )
+        # The parent doc should be at first
+        return [self.parent] + translations
 
     def is_child_of(self, other):
         """
@@ -1491,10 +1461,10 @@ Full traceback:
     @property
     def has_noindex_slug(self):
         """Return true if the slug is in hand-picked list of prefixes."""
-        for slug_start in NOINDEX_SLUG_PREFIXES:
-            if self.slug.startswith(slug_start):
-                return True
-        return False
+        return any(
+            self.slug.startswith(slug_start)
+            for slug_start in NOINDEX_SLUG_PREFIXES
+        )
 
     def get_hreflang(self, other_locales=None):
         """
@@ -1564,9 +1534,7 @@ Full traceback:
                 # This is updated only if the document is not a translation,
                 # otherwise its original value is preserved.
                 rev.based_on_id = prior_pk
-            rev.comment = "Clean prior revision of {} by {}".format(
-                prior_created, prior_creator
-            )
+            rev.comment = f"Clean prior revision of {prior_created} by {prior_creator}"
             # The current revision sometimes has an old slug that's
             # different than its document's current slug, so let's ensure
             # that they're the same so we don't trigger unique index errors
@@ -1842,7 +1810,7 @@ class Revision(models.Model):
         self.document.populate_attachments()
 
     def __str__(self):
-        return "[%s] %s #%s" % (self.document.locale, self.document.title, self.id)
+        return f"[{self.document.locale}] {self.document.title} #{self.id}"
 
     def get_section_content(self, section_id):
         """Convenience method to extract the content for a single section"""
@@ -1862,15 +1830,14 @@ class Revision(models.Model):
         # in the database, if so return it
         if self.tidied_content:
             tidied_content = self.tidied_content
+        elif allow_none:
+            tidied_content = None
         else:
-            if allow_none:
-                tidied_content = None
-            else:
-                tidied_content, errors = tidy_content(self.content)
-                if self.pk and not settings.MAINTENANCE_MODE:
-                    Revision.objects.filter(pk=self.pk).update(
-                        tidied_content=tidied_content
-                    )
+            tidied_content, errors = tidy_content(self.content)
+            if self.pk and not settings.MAINTENANCE_MODE:
+                Revision.objects.filter(pk=self.pk).update(
+                    tidied_content=tidied_content
+                )
         self.tidied_content = tidied_content or ""
         return tidied_content
 

@@ -45,7 +45,7 @@ def render_document(
     except DocumentRenderingInProgress:
         pass
     except Exception as e:
-        subject = "Exception while rendering document %s" % document.pk
+        subject = f"Exception while rendering document {document.pk}"
         mail_admins(subject=subject, message=str(e))
     return document.rendered_errors
 
@@ -56,8 +56,8 @@ def email_document_progress(command_name, percent_complete, total):
     """
     Task to send email for progress notification.
     """
-    subject = "The command `{}` is {}% complete".format(command_name, percent_complete)
-    message = "{} out of a total of {} documents.".format(subject, total)
+    subject = f"The command `{command_name}` is {percent_complete}% complete"
+    message = f"{subject} out of a total of {total} documents."
     mail_admins(subject=subject, message=message)
 
 
@@ -75,23 +75,19 @@ def render_document_chunk(
     """
     logger = render_document_chunk.get_logger()
     logger.info(
-        "Starting to render document chunk: %s" % ",".join([str(pk) for pk in pks])
+        f'Starting to render document chunk: {",".join([str(pk) for pk in pks])}'
     )
+
     base_url = base_url or settings.SITE_URL
     for pk in pks:
-        # calling the task without delay here since we want to localize
-        # the processing of the chunk in one process
-        result = render_document(
+        if result := render_document(
             pk,
             cache_control,
             base_url,
             force=force,
             invalidate_cdn_cache=invalidate_cdn_cache,
-        )
-        if result:
-            logger.error(
-                "Error while rendering document %s with error: %s" % (pk, result)
-            )
+        ):
+            logger.error(f"Error while rendering document {pk} with error: {result}")
     logger.info("Finished rendering of document chunk")
 
 
@@ -103,10 +99,9 @@ def clean_document_chunk(doc_pks, user_pk):
     """
     logger = clean_document_chunk.get_logger()
     logger.info(
-        "Starting to clean document chunk: {}".format(
-            ",".join(str(pk) for pk in doc_pks)
-        )
+        f'Starting to clean document chunk: {",".join((str(pk) for pk in doc_pks))}'
     )
+
     user = User.objects.get(pk=user_pk)
     num_cleaned = 0
     for pk in doc_pks:
@@ -116,7 +111,7 @@ def clean_document_chunk(doc_pks, user_pk):
             rev = doc.clean_current_revision(user)
         except Exception as e:
             logger.info("   ...mailing error to admins")
-            subject = "Error while cleaning document {}".format(pk)
+            subject = f"Error while cleaning document {pk}"
             mail_admins(subject=subject, message=str(e))
         else:
             if rev is None:
@@ -125,8 +120,7 @@ def clean_document_chunk(doc_pks, user_pk):
                 num_cleaned += 1
                 logger.info("   ...created {!r}".format(rev))
     logger.info(
-        "Finished cleaning document chunk ({} of {} "
-        "required cleaning)".format(num_cleaned, len(doc_pks))
+        f"Finished cleaning document chunk ({num_cleaned} of {len(doc_pks)} required cleaning)"
     )
 
 
@@ -153,7 +147,7 @@ def move_page(locale, slug, new_slug, user_id):
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         transaction.rollback()
-        logging.error("Page move failed: no user with id %s" % user_id)
+        logging.error(f"Page move failed: no user with id {user_id}")
         return
 
     try:
@@ -237,9 +231,9 @@ def move_page(locale, slug, new_slug, user_id):
     for moved_doc in [doc] + doc.get_descendants():
         moved_doc.schedule_rendering("max-age=0")
 
-    subject = "Page move completed: " + slug + " (" + locale + ")"
+    subject = f"Page move completed: {slug} ({locale})"
 
-    full_url = settings.SITE_URL + "/" + locale + "/docs/" + new_slug
+    full_url = f"{settings.SITE_URL}/{locale}/docs/{new_slug}"
 
     # Get the parent document, if parent doc is None, it means its the parent document
     parent_doc = doc.parent or doc

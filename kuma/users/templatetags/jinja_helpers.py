@@ -28,8 +28,7 @@ def get_avatar_url(user):
     for account in user.socialaccount_set.exclude(provider="persona").order_by(
         "date_joined"
     ):
-        avatar_url = account.get_avatar_url()
-        if avatar_url:
+        if avatar_url := account.get_avatar_url():
             return avatar_url
     return settings.DEFAULT_AVATAR
 
@@ -74,7 +73,7 @@ def ban_links(context, ban_user, banner_user):
                 '<i aria-hidden="true" class="icon-ban"></i></a>'
                 % (url_ban_cleanup, gettext("Ban User & Clean Up"))
             )
-        links = link_cleanup + " " + link
+        links = f"{link_cleanup} {link}"
     return Markup(links)
 
 
@@ -99,7 +98,7 @@ def public_email(email):
 
 def unicode_to_html(text):
     """Turns all unicode into html entities, e.g. &#69; -> E."""
-    return "".join(["&#%s;" % ord(i) for i in text])
+    return "".join([f"&#{ord(i)};" for i in text])
 
 
 @library.global_function
@@ -127,22 +126,20 @@ def provider_login_url(context, provider_id, **params):
     """
     request = context["request"]
     provider = providers.registry.by_id(provider_id)
-    auth_params = params.get("auth_params", None)
-    scope = params.get("scope", None)
-    process = params.get("process", None)
+    auth_params = params.get("auth_params")
+    scope = params.get("scope")
+    process = params.get("process")
     if scope == "":
         del params["scope"]
     if auth_params == "":
         del params["auth_params"]
-    if "next" not in params:
-        next = get_request_param(request, "next")
-        if next:
-            params["next"] = next
-        elif process == "redirect":
-            params["next"] = request.get_full_path()
-    else:
+    if "next" in params:
         if not params["next"]:
             del params["next"]
+    elif next := get_request_param(request, "next"):
+        params["next"] = next
+    elif process == "redirect":
+        params["next"] = request.get_full_path()
     # get the login url and append params as url parameters
     return Markup(provider.get_login_url(request, **params))
 

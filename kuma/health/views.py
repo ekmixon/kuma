@@ -196,6 +196,6 @@ def csp_violation_capture(request):
         # Incomplete CSP report
         return HttpResponseBadRequest("Incomplete CSP Report")
 
-    client.captureMessage(message="CSP Violation: {}".format(blocked_uri), data=data)
+    client.captureMessage(message=f"CSP Violation: {blocked_uri}", data=data)
 
     return HttpResponse("Captured CSP violation, thanks for reporting.")

@@ -39,7 +39,7 @@ def assert_function(statement, message=None):
     """Add runtime assertions to Jinja2 templates."""
     if not statement:
         if message:
-            raise RuntimeError("Failed assertion: {}".format(message))
+            raise RuntimeError(f"Failed assertion: {message}")
         else:
             raise RuntimeError("Failed assertion")
     return ""
@@ -105,7 +105,7 @@ def entity_decode(str):
 
 @library.global_function
 def page_title(title):
-    return jinja2.Markup("%s | MDN" % jinja2.escape(title))
+    return jinja2.Markup(f"{jinja2.escape(title)} | MDN")
 
 
 @library.filter

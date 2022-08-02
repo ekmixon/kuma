@@ -157,8 +157,7 @@ def extract_description(feed_item):
     """Extract the description and diff ID (if set) from a feed item."""
     desc_text = pq(feed_item).find("description").text()
     desc = pq(desc_text)
-    table = desc.find("table.diff")
-    if table:
+    if table := desc.find("table.diff"):
         # Format is difflib_chg_to[DIFF ID]__top
         assert len(table) == 1
         table_id = table[0].attrib["id"]
@@ -355,7 +354,7 @@ def test_recent_revisions_feed_filter_by_locale(locale, trans_edit_revision, cli
     assert len(data) == 2
     for item in data:
         path = urlparse(item["link"]).path
-        assert path.startswith("/" + locale + "/")
+        assert path.startswith(f"/{locale}/")
 
 
 @pytest.mark.parametrize("locale", ("en-US", "fr"))
@@ -370,7 +369,7 @@ def test_recent_documents_feed_filter_by_locale(locale, trans_edit_revision, cli
     data = json.loads(resp.content)
     assert len(data) == 1
     path = urlparse(data[0]["link"]).path
-    assert path.startswith("/" + locale + "/")
+    assert path.startswith(f"/{locale}/")
 
 
 def test_recent_documents_atom_feed(root_doc, client):

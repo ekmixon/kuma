@@ -189,10 +189,8 @@ class AkismetRevisionData(object):
         if language == self.default_language:
             blog_lang = self.akismet_lang(language)
         else:
-            blog_lang = "%s, %s" % (
-                self.akismet_lang(language),
-                self.akismet_lang(self.default_language),
-            )
+            blog_lang = f"{self.akismet_lang(language)}, {self.akismet_lang(self.default_language)}"
+
         self.parameters["blog_lang"] = blog_lang
 
     def set_by_edit_request(self, request):
@@ -243,8 +241,7 @@ class AkismetRevisionData(object):
         lines = []
         for line in diff:
             if line.startswith("+ "):
-                diff_content = line[2:].strip()
-                if diff_content:
+                if diff_content := line[2:].strip():
                     lines.append(diff_content)
         self.parameters["comment_content"] = "\n".join(lines)
 
@@ -332,8 +329,7 @@ class AkismetHistoricalData(AkismetRevisionData):
         assert revision.id, "Must be a saved Revision."
         assert revision.document_id, "Must be a Revision with a Document."
         super(AkismetHistoricalData, self).__init__()
-        revision_ip = revision.revisionip_set.first()
-        if revision_ip:
+        if revision_ip := revision.revisionip_set.first():
             if revision_ip.data:
                 # Use captured Akismet submission
                 self.parameters = json.loads(revision_ip.data)
@@ -357,8 +353,7 @@ class AkismetHistoricalData(AkismetRevisionData):
             self.set_permalink(document, request)
         self.set_comment_author(revision.creator)
         new_content = self.content_from_revision(revision)
-        old_revision = revision.get_previous()
-        if old_revision:
+        if old_revision := revision.get_previous():
             old_content = self.content_from_revision(old_revision)
         else:
             old_content = None
@@ -421,7 +416,7 @@ class DocumentForm(forms.ModelForm):
             slug = self.cleaned_data["title"]
         elif self.parent_slug:
             # Prepend parent slug if given from view
-            slug = self.parent_slug + "/" + slug
+            slug = f"{self.parent_slug}/{slug}"
 
         # Convert to NFKC, required for URLs (bug 1357416)
         # http://www.unicode.org/faq/normalization.html
@@ -642,10 +637,9 @@ class RevisionForm(AkismetCheckFormMixin, forms.ModelForm):
         """
         Validate the tags ensuring we have no case-sensitive duplicates.
         """
-        tags = self.cleaned_data["tags"]
         cleaned_tags = []
 
-        if tags:
+        if tags := self.cleaned_data["tags"]:
             for tag in parse_tags(tags):
                 # Note: The exact match query doesn't work correctly with
                 # MySQL with regards to case-sensitivity. If we move to
@@ -657,14 +651,17 @@ class RevisionForm(AkismetCheckFormMixin, forms.ModelForm):
                 # Write a log we can grep to help find pre-existing duplicate
                 # document tags for cleanup.
                 if len(doc_tag) > 1:
-                    log.warning("Found duplicate document tags: %s" % doc_tag)
+                    log.warning(f"Found duplicate document tags: {doc_tag}")
 
-                if doc_tag:
-                    if doc_tag[0] != tag and doc_tag[0].lower() == tag.lower():
-                        # The tag differs only by case. Do not add a new one,
-                        # add the existing one.
-                        cleaned_tags.append(doc_tag[0])
-                        continue
+                if (
+                    doc_tag
+                    and doc_tag[0] != tag
+                    and doc_tag[0].lower() == tag.lower()
+                ):
+                    # The tag differs only by case. Do not add a new one,
+                    # add the existing one.
+                    cleaned_tags.append(doc_tag[0])
+                    continue
 
                 cleaned_tags.append(tag)
 
@@ -824,9 +821,11 @@ class RevisionForm(AkismetCheckFormMixin, forms.ModelForm):
         This happens if the edit is to a non-content field, such as
         setting or clearing the technical review flag.
         """
-        if not parameters["comment_content"]:
-            return False  # No content change, not spam
-        return super(RevisionForm, self).akismet_call(parameters)
+        return (
+            super(RevisionForm, self).akismet_call(parameters)
+            if parameters["comment_content"]
+            else False
+        )
 
     def save(self, document, **kwargs):
         """
@@ -986,7 +985,7 @@ class TreeMoveForm(forms.Form):
 
     def clean(self):
         cleaned_data = super(TreeMoveForm, self).clean()
-        if set(["slug", "locale"]).issubset(cleaned_data):
+        if {"slug", "locale"}.issubset(cleaned_data):
             slug, locale = cleaned_data["slug"], cleaned_data["locale"]
             try:
                 valid_slug_parent(slug, locale)

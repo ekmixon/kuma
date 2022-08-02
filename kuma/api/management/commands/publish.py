@@ -61,7 +61,7 @@ class Command(BaseCommand):
             filters = {}
             if options["locale"]:
                 locale = options["locale"]
-                log.info("Publishing all documents in locale {}".format(locale))
+                log.info(f"Publishing all documents in locale {locale}")
                 filters.update(locale=locale)
             else:
                 log.info("Publishing all documents")

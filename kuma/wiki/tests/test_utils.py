@@ -361,7 +361,7 @@ def test_get_doc_components_from_url_check_host_same_domain(root_doc):
 
 def test_get_doc_components_from_url_check_host_diff_domain(root_doc):
     """get_doc_components_from_url fails on check_host with remote URL."""
-    url = "http://example.com" + root_doc.get_absolute_url()
+    url = f"http://example.com{root_doc.get_absolute_url()}"
     components = get_doc_components_from_url(url, check_host=True)
     assert components is False
 

@@ -57,11 +57,9 @@ class LangSelectorMiddleware(MiddlewareBase):
         else:
             new_path = old_path.replace(script_prefix, new_prefix, 1)
 
-        # Redirect to same path with requested language and without ?lang
-        new_query = dict(
-            (smart_str(k), v) for k, v in request.GET.items() if k != "lang"
-        )
-        if new_query:
+        if new_query := {
+            smart_str(k): v for k, v in request.GET.items() if k != "lang"
+        }:
             new_path = urlparams(new_path, **new_query)
         response = HttpResponseRedirect(new_path)
         add_shared_cache_control(response)
@@ -173,11 +171,13 @@ class LocaleMiddleware(MiddlewareBase):
             # language prefix and redirecting to that URL.
             language_path = f"/{language}{request.path_info}"
             path_valid = is_valid_path(language_path, language, urlconf)
-            path_needs_slash = not path_valid and (
-                settings.APPEND_SLASH
+            path_needs_slash = (
+                not path_valid
+                and settings.APPEND_SLASH
                 and not language_path.endswith("/")
-                and is_valid_path("%s/" % language_path, language, urlconf)
+                and is_valid_path(f"{language_path}/", language, urlconf)
             )
+
 
             if path_valid or path_needs_slash:
                 script_prefix = get_script_prefix()
@@ -187,11 +187,12 @@ class LocaleMiddleware(MiddlewareBase):
                     force_append_slash=path_needs_slash
                 ).replace(script_prefix, f"{script_prefix}{language}/", 1)
                 # Kuma: Add caching headers to redirect
-                if request.path_info == "/":
-                    # Only the homepage should be redirected permanently.
-                    redirect = HttpResponsePermanentRedirect(language_url)
-                else:
-                    redirect = HttpResponseRedirect(language_url)
+                redirect = (
+                    HttpResponsePermanentRedirect(language_url)
+                    if request.path_info == "/"
+                    else HttpResponseRedirect(language_url)
+                )
+
                 add_shared_cache_control(redirect)
                 return redirect
 
@@ -272,9 +273,9 @@ class SlashMiddleware(MiddlewareBase):
             if path.endswith("/") and is_valid_path(path[:-1], language):
                 # Remove the trailing slash for a valid URL
                 new_path = path[:-1]
-            elif not path.endswith("/") and is_valid_path(path + "/", language):
+            elif not path.endswith("/") and is_valid_path(f"{path}/", language):
                 # Add a trailing slash for a valid URL
-                new_path = path + "/"
+                new_path = f"{path}/"
             if new_path:
                 if request.GET:
                     new_path += "?" + request.META["QUERY_STRING"]

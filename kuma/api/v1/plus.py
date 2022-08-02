@@ -19,13 +19,11 @@ def landing_page_survey(request):
         if not uuid:
             return HttpResponseBadRequest("missing 'uuid'")
         survey = get_object_or_404(LandingPageSurvey, uuid=uuid)
-        email = request.POST.get("email")
-        if email:
+        if email := request.POST.get("email"):
             survey.email = email.strip()
             survey.save()
 
-        response_json = request.POST.get("response")
-        if response_json:
+        if response_json := request.POST.get("response"):
             try:
                 response = json.loads(response_json)
             except ValueError:
@@ -41,8 +39,7 @@ def landing_page_survey(request):
             variant = int(variant)
         except ValueError:
             return HttpResponseBadRequest("invalid 'variant'")
-        uuid = request.GET.get("uuid")
-        if uuid:
+        if uuid := request.GET.get("uuid"):
             try:
                 UUID(uuid)
             except ValueError:

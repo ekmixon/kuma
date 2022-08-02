@@ -345,9 +345,9 @@ def ks_toolbox():
     # Headers are case-insensitive, so let's drive that point home.
     p = ["firelogger", "FIRELOGGER", "FireLogger"]
     fl_uid = 8675309
-    errors_as_headers = {}
-    for i, line in enumerate(d_lines):
-        errors_as_headers["%s-%s-%s" % (p[i % len(p)], fl_uid, i)] = line
+    errors_as_headers = {
+        f"{p[i % len(p)]}-{fl_uid}-{i}": line for i, line in enumerate(d_lines)
+    }
 
     macros_response = {
         "json": {

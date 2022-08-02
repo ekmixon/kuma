@@ -209,10 +209,7 @@ class FakeSource(Source):
             )
 
         if self.remaining_length == 0:
-            if self.error:
-                self.state = self.STATE_ERROR
-            else:
-                self.state = self.STATE_DONE
+            self.state = self.STATE_ERROR if self.error else self.STATE_DONE
         else:
             self.remaining_length -= 1
 

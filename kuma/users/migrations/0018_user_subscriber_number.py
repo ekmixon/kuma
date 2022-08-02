@@ -5,13 +5,11 @@ from django.db import migrations, models
 
 def set_initial_subscriber_number(apps, schema_editor):
     User = apps.get_model("users", "User")
-    number = 1
-    for user in User.objects.exclude(
+    for number, user in enumerate(User.objects.exclude(
         stripe_customer_id="", subscriber_number__isnull=True
-    ):
+    ), start=1):
         user.subscriber_number = number
         user.save()
-        number += 1
 
 
 class Migration(migrations.Migration):

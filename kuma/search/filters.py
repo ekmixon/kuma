@@ -54,7 +54,7 @@ class LanguageFilterBackend(BaseFilterBackend):
 
     def filter_queryset(self, request, queryset, view):
         locale = request.GET.get("locale", None)
-        if "*" == locale:
+        if locale == "*":
             return queryset
 
         sq = queryset.to_dict().pop("query", query.MatchAll().to_dict())
@@ -93,9 +93,7 @@ class SearchQueryBackend(BaseFilterBackend):
     ]
 
     def filter_queryset(self, request, queryset, view):
-        search_term = view.query_params.get("q")
-
-        if search_term:
+        if search_term := view.query_params.get("q"):
             queries = []
             for query_type, field, boost in self.search_operations:
                 queries.append(
@@ -175,10 +173,7 @@ class TagGroupFilterBackend(BaseFilterBackend):
 
             if serialized_filter["slug"] in view.selected_filters:
                 # User selected this filter - filter on the associated tags
-                tag_filters = []
-                for filter_tag in filter_tags:
-                    tag_filters.append(Q("term", tags=filter_tag))
-
+                tag_filters = [Q("term", tags=filter_tag) for filter_tag in filter_tags]
                 filter_operator = Filter.OPERATORS[serialized_filter["operator"]]
                 if len(tag_filters) > 1 and filter_operator == "and":
                     # Add an AND filter as a subclause

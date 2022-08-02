@@ -39,14 +39,14 @@ class Command(BaseCommand):
             filters = {}
             if options["locale"] and not options["all"]:
                 locale = options["locale"].decode("utf8")
-                self.stdout.write("Cleaning all documents in locale {}".format(locale))
+                self.stdout.write(f"Cleaning all documents in locale {locale}")
                 filters.update(locale=locale)
             else:
                 self.stdout.write("Cleaning all documents")
             docs = Document.objects.filter(**filters)
             docs = docs.order_by("-modified")
             docs = docs.values_list("id", flat=True)
-            self.stdout.write("...found {} documents.".format(len(docs)))
+            self.stdout.write(f"...found {len(docs)} documents.")
             chain_clean_docs(docs, user.pk)
         else:
             # Accept page paths from command line, but be liberal
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                     self.stdout.write("Cleaning {!r}".format(doc))
                     rev = doc.clean_current_revision(user)
                 except Exception as e:
-                    self.stderr.write("...error: {}".format(str(e)))
+                    self.stderr.write(f"...error: {str(e)}")
                 else:
                     if rev is None:
                         self.stdout.write("...skipped (it's already clean)")

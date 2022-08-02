@@ -23,7 +23,7 @@ def mock_search_count():
 @pytest.mark.parametrize("endpoint", ["liveness", "readiness", "status"])
 def test_disallowed_methods(client, http_method, endpoint):
     """Alternate HTTP methods are not allowed."""
-    url = reverse("health.{}".format(endpoint))
+    url = reverse(f"health.{endpoint}")
     response = getattr(client, http_method)(url)
     assert response.status_code == 405
     assert_no_cache_header(response)
@@ -32,7 +32,7 @@ def test_disallowed_methods(client, http_method, endpoint):
 @pytest.mark.parametrize("http_method", ["get", "head"])
 @pytest.mark.parametrize("endpoint", ["liveness", "readiness"])
 def test_liveness_and_readiness(db, client, http_method, endpoint):
-    url = reverse("health.{}".format(endpoint))
+    url = reverse(f"health.{endpoint}")
     response = getattr(client, http_method)(url)
     assert response.status_code == 204
     assert_no_cache_header(response)

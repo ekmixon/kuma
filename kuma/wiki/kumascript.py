@@ -89,7 +89,7 @@ def get(document, base_url, cache_control=None, timeout=None, selective_mode=Non
 
     if not base_url:
         site = Site.objects.get_current()
-        base_url = "http://%s" % site.domain
+        base_url = f"http://{site.domain}"
 
     # Assemble some KumaScript env vars
     path = document.get_absolute_url()
@@ -114,14 +114,14 @@ def get(document, base_url, cache_control=None, timeout=None, selective_mode=Non
 def add_env_headers(headers, env_vars):
     """Encode env_vars as kumascript headers, as base64 JSON-encoded values."""
     headers.update(
-        dict(
-            (
-                "x-kumascript-env-%s" % k,
-                base64.b64encode(json.dumps(v).encode()).decode(),
-            )
+        {
+            f"x-kumascript-env-{k}": base64.b64encode(
+                json.dumps(v).encode()
+            ).decode()
             for k, v in env_vars.items()
-        )
+        }
     )
+
     return headers
 
 
@@ -164,10 +164,11 @@ def process_errors(response):
         errors = [
             {
                 "level": "error",
-                "message": "Problem parsing errors: %s" % exc,
+                "message": f"Problem parsing errors: {exc}",
                 "args": ["ParsingError"],
-            },
+            }
         ]
+
     return errors
 
 
@@ -181,17 +182,16 @@ def macro_sources(force_lowercase_keys=False):
     """
     ks_macro_url = urljoin(KUMASCRIPT_BASE_URL, "macros/")
     response = requests.get(ks_macro_url)
-    if response.status_code == 200:
-        macros_raw = response.json()["macros"]
-        # Ensure Normal Form C used on GitHub
-        normalize_key = normalize = partial(unicodedata.normalize, "NFC")
-        if force_lowercase_keys:
-            normalize_key = lambda x: normalize(x).lower()  # noqa: E731
-        return {
-            normalize_key(md["name"]): normalize(md["filename"]) for md in macros_raw
-        }
-    else:
+    if response.status_code != 200:
         return {}
+    macros_raw = response.json()["macros"]
+    # Ensure Normal Form C used on GitHub
+    normalize_key = normalize = partial(unicodedata.normalize, "NFC")
+    if force_lowercase_keys:
+        normalize_key = lambda x: normalize(x).lower()  # noqa: E731
+    return {
+        normalize_key(md["name"]): normalize(md["filename"]) for md in macros_raw
+    }
 
 
 def request_revision_hash():

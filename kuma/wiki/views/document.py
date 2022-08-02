@@ -115,10 +115,9 @@ def _get_seo_parent_title(document, slug_dict, document_locale):
     """
     Get parent-title information for SEO purposes.
     """
-    seo_doc_slug = slug_dict["seo_root"]
     seo_root_doc = None
 
-    if seo_doc_slug:
+    if seo_doc_slug := slug_dict["seo_root"]:
         # If the SEO root doc is the parent topic, save a query
         if document.parent_topic_id and document.parent_topic.slug == seo_doc_slug:
             seo_root_doc = document.parent_topic
@@ -130,10 +129,7 @@ def _get_seo_parent_title(document, slug_dict, document_locale):
             except Document.DoesNotExist:
                 pass
 
-    if seo_root_doc:
-        return " - {}".format(seo_root_doc.title)
-    else:
-        return ""
+    return f" - {seo_root_doc.title}" if seo_root_doc else ""
 
 
 def _filter_doc_html(request, doc, doc_html, rendering_params):
@@ -263,7 +259,7 @@ def _get_doc_and_fallback_reason(document_locale, document_slug):
         "parent_topic",
     ]
     current_revision_fields = [
-        "current_revision__{}".format(field)
+        f"current_revision__{field}"
         for field in (
             "toc_depth",
             "created",
@@ -272,13 +268,16 @@ def _get_doc_and_fallback_reason(document_locale, document_slug):
             "creator__is_active",
         )
     ]
+
     parent_fields = [
-        "parent__{}".format(field)
+        f"parent__{field}"
         for field in ("locale", "slug", "current_revision__slug")
     ]
+
     parent_topic_fields = [
-        "parent_topic__{}".format(field) for field in ("id", "title", "slug")
+        f"parent_topic__{field}" for field in ("id", "title", "slug")
     ]
+
 
     document_fields = [
         "html",
@@ -306,12 +305,13 @@ def _get_doc_and_fallback_reason(document_locale, document_slug):
             .get(locale=document_locale, slug=document_slug)
         )
 
-        if not doc.current_revision_id and doc.parent and doc.parent.current_revision:
-            # This is a translation but its current_revision is None
-            # and OK to fall back to parent (parent is approved).
-            fallback_reason = "translation_not_approved"
-        elif not doc.current_revision_id:
-            fallback_reason = "no_content"
+        if not doc.current_revision_id:
+            if doc.parent and doc.parent.current_revision:
+                # This is a translation but its current_revision is None
+                # and OK to fall back to parent (parent is approved).
+                fallback_reason = "translation_not_approved"
+            else:
+                fallback_reason = "no_content"
     except Document.DoesNotExist:
         pass
 
@@ -331,7 +331,7 @@ def _apply_content_experiment(request, doc):
     If the page is not under a content experiment, the return is
     (original Document, None).
     """
-    key = "%s:%s" % (doc.locale, doc.slug)
+    key = f"{doc.locale}:{doc.slug}"
     for experiment in settings.CONTENT_EXPERIMENTS:
         if key in experiment["pages"]:
             # This page is under a content experiment
@@ -346,9 +346,7 @@ def _apply_content_experiment(request, doc):
                 "selection_is_valid": None,
             }
 
-            # Which variant was selected?
-            selected = request.GET.get(experiment["param"])
-            if selected:
+            if selected := request.GET.get(experiment["param"]):
                 exp_params["selection_is_valid"] = False
                 for variant, variant_slug in variants.items():
                     if selected == variant:
@@ -379,9 +377,7 @@ def children(request, document_slug, document_locale):
     expand = "expand" in request.GET
     max_depth = 5
     depth = int(request.GET.get("depth", max_depth))
-    if depth > max_depth:
-        depth = max_depth
-
+    depth = min(depth, max_depth)
     result = []
     try:
         doc = Document.objects.get(locale=document_locale, slug=document_slug)
@@ -414,8 +410,7 @@ def move(request, document_slug, document_locale):
     if request.method == "POST":
         form = TreeMoveForm(initial=request.GET, data=request.POST)
         if form.is_valid():
-            conflicts = doc._tree_conflicts(form.cleaned_data["slug"])
-            if conflicts:
+            if conflicts := doc._tree_conflicts(form.cleaned_data["slug"]):
                 return render(
                     request,
                     "wiki/move.html",
@@ -494,7 +489,7 @@ def toc(request, document_slug=None, document_locale=None):
     document = get_object_or_404(Document, **query)
     toc_html = document.get_toc_html()
     if toc_html:
-        toc_html = "<ol>" + toc_html + "</ol>"
+        toc_html = f"<ol>{toc_html}</ol>"
 
     return HttpResponse(toc_html)
 
@@ -702,10 +697,8 @@ def wiki_document(request, document_slug, document_locale):
             # request parameters.
             if (
                 any(
-                    [
-                        request.GET.get(param, None)
-                        for param in ("raw", "include", "nocreate")
-                    ]
+                    request.GET.get(param, None)
+                    for param in ("raw", "include", "nocreate")
                 )
                 or not request.user.is_authenticated
             ):
@@ -750,9 +743,11 @@ def wiki_document(request, document_slug, document_locale):
         return HttpResponsePermanentRedirect(url)
 
     # Read some request params to see what we're supposed to do.
-    rendering_params = {}
-    for param in ("raw", "summary", "include", "edit_links"):
-        rendering_params[param] = request.GET.get(param, False) is not False
+    rendering_params = {
+        param: request.GET.get(param, False) is not False
+        for param in ("raw", "summary", "include", "edit_links")
+    }
+
     rendering_params["section"] = request.GET.get("section", None)
     rendering_params["render_raw_fallback"] = False
 
@@ -807,9 +802,10 @@ def wiki_document(request, document_slug, document_locale):
         other_translations = original_doc.get_other_translations(
             fields=["title", "locale", "slug", "parent"]
         )
-        all_locales = {original_doc.locale} | set(
+        all_locales = {original_doc.locale} | {
             trans.locale for trans in other_translations
-        )
+        }
+
 
         # Bundle it all up and, finally, return.
         context = {
@@ -950,10 +946,7 @@ def react_document(request, document_slug, document_locale):
         if doc.has_noindex_slug:
             return False
 
-        if request.get_host() not in settings.ALLOW_ROBOTS_WEB_DOMAINS:
-            return False
-
-        return True
+        return request.get_host() in settings.ALLOW_ROBOTS_WEB_DOMAINS
 
     robots_meta_content = "index, follow" if robots_index() else "noindex, nofollow"
 
@@ -992,7 +985,7 @@ def document_api_data(doc=None, redirect_url=None):
     other_translations = doc.get_other_translations(
         fields=("locale", "slug", "title", "parent")
     )
-    available_locales = {doc.locale} | set(t.locale for t in other_translations)
+    available_locales = {doc.locale} | {t.locale for t in other_translations}
 
     doc_absolute_url = doc.get_absolute_url()
     revision = doc.current_or_latest_revision()

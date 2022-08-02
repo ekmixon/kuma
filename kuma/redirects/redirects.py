@@ -951,13 +951,13 @@ zone_redirectpatterns = []
 for zone_root, wiki_slug, locales in zone_redirects:
     for locale in locales:
         zone_root_pattern = zone_root
-        if zone_root != wiki_slug:
-            zone_root_pattern = "(?:docs/)?" + zone_root_pattern
+        if zone_root_pattern != wiki_slug:
+            zone_root_pattern = f"(?:docs/)?{zone_root_pattern}"
         # NOTE: The redirect for the case when there is no locale for a zone
         # must be handled here, because if we let LocaleMiddleware handle the
         # 404 response and redirect to the proper locale, the path would be
         # considered invalid.
-        prefix = (locale + "/") if locale else ""
+        prefix = f"{locale}/" if locale else ""
         pattern = zone_pattern_fmt.format(
             prefix=prefix, zone_root_pattern=zone_root_pattern
         )
@@ -981,37 +981,40 @@ external_redirect = partial(
 
 marionette_redirectpatterns = [
     external_redirect(
-        r"docs/(?:Mozilla/QA/)?Marionette$", marionette_docs_root_url + "index.html"
+        r"docs/(?:Mozilla/QA/)?Marionette$",
+        f"{marionette_docs_root_url}index.html",
     ),
     external_redirect(
         r"docs/(?:Mozilla/QA/)?Marionette/Builds$",
-        marionette_docs_root_url + "Building.html",
+        f"{marionette_docs_root_url}Building.html",
     ),
     external_redirect(
         r"docs/(?:Mozilla/QA/)?Marionette/Client$", marionette_client_docs_url
     ),
     external_redirect(
-        r"docs/Mozilla/QA/Marionette/Python_Client$", marionette_client_docs_url
+        r"docs/Mozilla/QA/Marionette/Python_Client$",
+        marionette_client_docs_url,
     ),
     external_redirect(
         r"docs/(?:Mozilla/QA/)?Marionette/Developer_setup$",
-        marionette_docs_root_url + "Contributing.html",
+        f"{marionette_docs_root_url}Contributing.html",
     ),
     external_redirect(
-        r"docs/Marionette_Test_Runner$", marionette_docs_root_url + "PythonTests.html"
+        r"docs/Marionette_Test_Runner$",
+        f"{marionette_docs_root_url}PythonTests.html",
     ),
     external_redirect(
         r"docs/Mozilla/QA/Marionette/Marionette_Test_Runner$",
-        marionette_docs_root_url + "PythonTests.html",
+        f"{marionette_docs_root_url}PythonTests.html",
     ),
     external_redirect(
         r"docs/(?:Mozilla/QA/)?Marionette/(?:MarionetteTestCase"
         r"|Marionette_Python_Tests|Running_Tests|Tests)$",
-        marionette_docs_root_url + "PythonTests.html",
+        f"{marionette_docs_root_url}PythonTests.html",
     ),
     external_redirect(
         r"docs/Mozilla/QA/Marionette/Protocol$",
-        marionette_docs_root_url + "Protocol.html",
+        f"{marionette_docs_root_url}Protocol.html",
     ),
     external_redirect(
         r"docs/Mozilla/QA/Marionette/WebDriver/status$",
@@ -1019,17 +1022,22 @@ marionette_redirectpatterns = [
         "/showdependencytree.cgi?id=721859&hide_resolved=1",
     ),
     external_redirect(
-        r"docs/Marionette/Debugging$", marionette_docs_root_url + "Debugging.html"
+        r"docs/Marionette/Debugging$",
+        f"{marionette_docs_root_url}Debugging.html",
     ),
 ]
 
+
 webextensions_redirectpatterns = [
     external_redirect(
-        r"docs/Mozilla/Add-ons/{}$".format(ao_path),
-        "https://extensionworkshop.com/documentation/" + ew_path,
+        f"docs/Mozilla/Add-ons/{ao_path}$",
+        f"https://extensionworkshop.com/documentation/{ew_path}",
     )
     for ao_path, ew_path in (
-        ("WebExtensions/Security_best_practices", "develop/build-a-secure-extension/"),
+        (
+            "WebExtensions/Security_best_practices",
+            "develop/build-a-secure-extension/",
+        ),
         (
             "WebExtensions/user_interface/Accessibility_guidelines",
             "develop/build-an-accessible-extension/",
@@ -1083,7 +1091,10 @@ webextensions_redirectpatterns = [
             "WebExtensions/Testing_persistent_and_restart_features",
             "develop/testing-persistent-and-restart-features/",
         ),
-        ("WebExtensions/Test_permission_requests", "develop/test-permission-requests/"),
+        (
+            "WebExtensions/Test_permission_requests",
+            "develop/test-permission-requests/",
+        ),
         (
             "WebExtensions/Developing_WebExtensions_for_Firefox_for_Android",
             "develop/developing-extensions-for-firefox-for-android/",
@@ -1122,10 +1133,16 @@ webextensions_redirectpatterns = [
             "Distribution",
             "publish/signing-and-distribution-overview/#distributing-your-addon",
         ),
-        ("WebExtensions/Package_your_extension_", "publish/package-your-extension/"),
+        (
+            "WebExtensions/Package_your_extension_",
+            "publish/package-your-extension/",
+        ),
         ("Distribution/Submitting_an_add-on", "publish/submitting-an-add-on/"),
         ("Source_Code_Submission", "publish/source-code-submission/"),
-        ("Distribution/Resources_for_publishers", "manage/resources-for-publishers/"),
+        (
+            "Distribution/Resources_for_publishers",
+            "manage/resources-for-publishers/",
+        ),
         ("Listing", "develop/create-an-appealing-listing/"),
         (
             "Distribution/Make_money_from_browser_extensions",
@@ -1136,8 +1153,14 @@ webextensions_redirectpatterns = [
             "publish/promoting-your-extension/",
         ),
         ("AMO/Policy/Reviews", "publish/add-on-policies/"),
-        ("AMO/Policy/Agreement", "publish/firefox-add-on-distribution-agreement/"),
-        ("Distribution/Retiring_your_extension", "manage/retiring-your-extension/"),
+        (
+            "AMO/Policy/Agreement",
+            "publish/firefox-add-on-distribution-agreement/",
+        ),
+        (
+            "Distribution/Retiring_your_extension",
+            "manage/retiring-your-extension/",
+        ),
         (
             "WebExtensions/Distribution_options/Sideloading_add-ons",
             "publish/distribute-sideloading/",
@@ -1146,7 +1169,10 @@ webextensions_redirectpatterns = [
             "WebExtensions/Distribution_options/Add-ons_for_desktop_apps",
             "publish/distribute-for-desktop-apps/",
         ),
-        ("WebExtensions/Distribution_options/Add-ons_in_the_enterprise", "enterprise/"),
+        (
+            "WebExtensions/Distribution_options/Add-ons_in_the_enterprise",
+            "enterprise/",
+        ),
         ("AMO/Blocking_Process", "publish/add-ons-blocking-process/"),
         ("Third_Party_Library_Usage", "publish/third-party-library-usage/"),
         (
@@ -1156,6 +1182,7 @@ webextensions_redirectpatterns = [
         ("AMO/Policy/Featured", "publish/recommended-extensions/"),
     )
 ]
+
 
 firefox_accounts_redirectpatterns = [
     external_redirect(

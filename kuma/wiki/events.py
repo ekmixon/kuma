@@ -53,11 +53,7 @@ def notification_context(revision):
     }
 
     for name, url in link_urls.items():
-        if url:
-            context[name] = add_utm(url, "Wiki Doc Edits")
-        else:
-            context[name] = url
-
+        context[name] = add_utm(url, "Wiki Doc Edits") if url else url
     return context
 
 
@@ -86,9 +82,7 @@ class EditDocumentEvent(InstanceEvent):
     def _mails(self, users_and_watches):
         revision = self.revision
         document = revision.document
-        log.debug(
-            "Sending edited notification email for document (id=%s)" % document.id
-        )
+        log.debug(f"Sending edited notification email for document (id={document.id})")
         if document.revisions.only("id").first().id == revision.id:
             subject = _(
                 '[MDN][%(locale)s][New] Page "%(document_title)s"'
@@ -146,14 +140,13 @@ def first_edit_email(revision):
         "doc": doc.title,
     }
     message = render_to_string("wiki/email/edited.ltxt", notification_context(revision))
-    email = EmailMessage(
+    return EmailMessage(
         subject,
         message,
         settings.DEFAULT_FROM_EMAIL,
         to=[settings.EMAIL_LIST_SPAM_WATCH],
         headers=extra_headers(user, doc),
     )
-    return email
 
 
 def spam_attempt_email(spam_attempt):
@@ -165,15 +158,14 @@ def spam_attempt_email(spam_attempt):
     subject = "[MDN] Wiki spam attempt recorded"
     document = spam_attempt.document
     if document:
-        subject = "%s for document %s" % (subject, document)
+        subject = f"{subject} for document {document}"
     elif spam_attempt.title:
-        subject = "%s with title %s" % (subject, spam_attempt.title)
+        subject = f"{subject} with title {spam_attempt.title}"
     body = render_to_string("wiki/email/spam.ltxt", {"spam_attempt": spam_attempt})
-    email = EmailMessage(
+    return EmailMessage(
         subject,
         body,
         settings.DEFAULT_FROM_EMAIL,
         to=[settings.EMAIL_LIST_SPAM_WATCH],
         headers=extra_headers(spam_attempt.user, document),
     )
-    return email

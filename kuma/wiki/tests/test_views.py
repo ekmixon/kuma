@@ -143,7 +143,7 @@ class ViewTests(UserTestCase, WikiTestCase):
         for expand in (True, False):
             url = reverse("wiki.children", args=["Root"])
             if expand:
-                url = "%s?expand" % url
+                url = f"{url}?expand"
             resp = self.client.get(url)
             assert resp.status_code == 200
             assert_shared_cache_header(resp)
@@ -218,9 +218,10 @@ class ViewTests(UserTestCase, WikiTestCase):
         """,
         )
         resp = self.client.get(
-            "%s?raw&summary" % rev.document.get_absolute_url(),
+            f"{rev.document.get_absolute_url()}?raw&summary",
             HTTP_HOST=settings.WIKI_HOST,
         )
+
         assert resp.status_code == 200
         assert_shared_cache_header(resp)
         assert resp.content == b'Foo bar <a href="http://example.com">baz</a>'
@@ -339,15 +340,16 @@ class KumascriptIntegrationTests(UserTestCase, WikiTestCase):
     def test_nomacros(self, mock_kumascript_get):
         mock_kumascript_get.return_value = (self.doc.html, None)
         self.client.get(
-            "%s?nomacros" % self.url, follow=False, HTTP_HOST=settings.WIKI_HOST
+            f"{self.url}?nomacros", follow=False, HTTP_HOST=settings.WIKI_HOST
         )
+
         assert not mock_kumascript_get.called, "kumascript should not have been used"
 
     @override_config(KUMASCRIPT_TIMEOUT=1.0)
     @mock.patch("kuma.wiki.kumascript.get")
     def test_raw(self, mock_kumascript_get):
         mock_kumascript_get.return_value = (self.doc.html, None)
-        self.client.get("%s?raw" % self.url, follow=False, HTTP_HOST=settings.WIKI_HOST)
+        self.client.get(f"{self.url}?raw", follow=False, HTTP_HOST=settings.WIKI_HOST)
         assert not mock_kumascript_get.called, "kumascript should not have been used"
 
     @override_config(KUMASCRIPT_TIMEOUT=1.0)
@@ -355,8 +357,9 @@ class KumascriptIntegrationTests(UserTestCase, WikiTestCase):
     def test_raw_macros(self, mock_kumascript_get):
         mock_kumascript_get.return_value = (self.doc.html, None)
         self.client.get(
-            "%s?raw&macros" % self.url, follow=False, HTTP_HOST=settings.WIKI_HOST
+            f"{self.url}?raw&macros", follow=False, HTTP_HOST=settings.WIKI_HOST
         )
+
         assert mock_kumascript_get.called, "kumascript should have been used"
 
     @override_config(KUMASCRIPT_TIMEOUT=1.0, KUMASCRIPT_MAX_AGE=600)
@@ -462,7 +465,7 @@ class DocumentSEOTests(UserTestCase, WikiTestCase):
 
         # Test pages - very basic
         good = "This is the content which should be chosen, man."
-        make_page_and_compare_seo("one", "<p>" + good + "</p>", good)
+        make_page_and_compare_seo("one", f"<p>{good}</p>", good)
         # No content, no seo
         make_page_and_compare_seo("two", "blahblahblahblah<br />", None)
         # No summary, no seo
@@ -551,7 +554,7 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
 
         # Establish attribs of child page.
         local_slug = "Some_New_Title"
-        slug = "%s/%s" % (rev.document.slug, local_slug)
+        slug = f"{rev.document.slug}/{local_slug}"
         url = reverse("wiki.document", args=[slug])
 
         # Ensure redirect to create new page on attempt to visit non-existent
@@ -562,12 +565,12 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         assert "public" not in resp["Cache-Control"]
         assert "s-maxage" not in resp["Cache-Control"]
         assert "docs/new" in resp["Location"]
-        assert ("slug=%s" % local_slug) in resp["Location"]
+        assert f"slug={local_slug}" in resp["Location"]
 
         # Ensure real 404 for visit to non-existent page with params common to
         # kumascript and raw content API.
         for p_name in ("raw", "include", "nocreate"):
-            sub_url = "%s?%s=1" % (url, p_name)
+            sub_url = f"{url}?{p_name}=1"
             resp = self.client.get(sub_url, HTTP_HOST=settings.WIKI_HOST)
             assert resp.status_code == 404
 
@@ -602,7 +605,7 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         doc._move_tree(new_slug="moved_doc")
 
         # Try to create a child with the old slug
-        child_full_slug = doc_first_slug + "/" + "children_document"
+        child_full_slug = f"{doc_first_slug}/children_document"
         url = reverse("wiki.document", args=[child_full_slug])
         response = self.client.get(url, HTTP_HOST=settings.WIKI_HOST)
         assert response.status_code == 302
@@ -630,7 +633,7 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         assert response.status_code == 301
         assert response["Location"] == "/"
 
-        subpage_url = doc_url + "/SubPage"
+        subpage_url = f"{doc_url}/SubPage"
         response = self.client.get(subpage_url, HTTP_HOST=settings.WIKI_HOST)
         assert response.status_code == 404
 
@@ -832,7 +835,7 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         assert_no_cache_header(response)
         url = reverse("wiki.document", args=["length/length"])
         params = {"rev_saved": rev_id}
-        url = "%s?%s" % (url, urlencode(params))
+        url = f"{url}?{urlencode(params)}"
         self.assertRedirects(response, url)
 
         # Creating a new translation of parent and child
@@ -842,27 +845,29 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         child_data["slug"] = "length"
         translate_url = reverse("wiki.document", args=[child_data["slug"]])
         response = self.client.post(
-            translate_url + "$translate?tolocale=es",
+            f"{translate_url}$translate?tolocale=es",
             child_data,
             HTTP_HOST=settings.WIKI_HOST,
         )
+
         assert 302 == response.status_code
         url = reverse("wiki.document", args=[child_data["slug"]], locale="es")
         params = {"rev_saved": ""}
-        url = "%s?%s" % (url, urlencode(params))
+        url = f"{url}?{urlencode(params)}"
         assert response["Location"] == url
 
         translate_url = reverse("wiki.document", args=["length/length"])
         response = self.client.post(
-            translate_url + "$translate?tolocale=es",
+            f"{translate_url}$translate?tolocale=es",
             child_data,
             HTTP_HOST=settings.WIKI_HOST,
         )
+
         assert 302 == response.status_code
         slug = "length/" + child_data["slug"]
         url = reverse("wiki.document", args=[slug], locale="es")
         params = {"rev_saved": ""}
-        url = "%s?%s" % (url, urlencode(params))
+        url = f"{url}?{urlencode(params)}"
         assert response["Location"] == url
 
     def test_translate_keeps_topical_parent(self):
@@ -880,15 +885,16 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         )
         revision(document=de_child_doc, save=True)
 
-        post_data = {}
-        post_data["slug"] = de_child_doc.slug
-        post_data["title"] = "New title"
-        post_data["form"] = "both"
-        post_data["content"] = "New translation"
-        post_data["tolocale"] = "de"
-        post_data["toc_depth"] = 0
-        post_data["based_on"] = en_child_rev.id
-        post_data["parent_id"] = en_child_doc.id
+        post_data = {
+            "slug": de_child_doc.slug,
+            "title": "New title",
+            "form": "both",
+            "content": "New translation",
+            "tolocale": "de",
+            "toc_depth": 0,
+            "based_on": en_child_rev.id,
+            "parent_id": en_child_doc.id,
+        }
 
         translate_url = reverse("wiki.edit", args=[de_child_doc.slug], locale="de")
         response = self.client.post(
@@ -926,14 +932,14 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         post_data["form"] = "both"
         post_data["toc_depth"] = r.toc_depth
         translate_url = reverse("wiki.document", args=[original_slug])
-        translate_url += "$translate?tolocale=" + foreign_locale
+        translate_url += f"$translate?tolocale={foreign_locale}"
         response = self.client.post(
             translate_url, post_data, HTTP_HOST=settings.WIKI_HOST
         )
 
         doc_url = reverse("wiki.document", args=[foreign_slug], locale=foreign_locale)
         params = {"rev_saved": ""}
-        doc_url = "%s?%s" % (doc_url, urlencode(params))
+        doc_url = f"{doc_url}?{urlencode(params)}"
         assert response["Location"] == doc_url
 
         es_d = Document.objects.get(locale=foreign_locale, slug=foreign_slug)
@@ -963,14 +969,14 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         translation_data["is_localizable"] = False
         translation_data["form"] = "both"
         translate_url = reverse("wiki.document", args=[en_slug])
-        translate_url += "$translate?tolocale=" + es_locale
+        translate_url += f"$translate?tolocale={es_locale}"
         response = self.client.post(
             translate_url, translation_data, HTTP_HOST=settings.WIKI_HOST
         )
         # Sanity to make sure the translate succeeded.
         doc_url = reverse("wiki.document", args=[es_slug], locale=es_locale)
         params = {"rev_saved": ""}
-        doc_url = "%s?%s" % (doc_url, urlencode(params))
+        doc_url = f"{doc_url}?{urlencode(params)}"
         assert response["Location"] == doc_url
         es_doc = Document.objects.get(locale=es_locale, slug=es_slug)
         es_doc.render()
@@ -1016,13 +1022,13 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         parent_data["is_localizable"] = True
         parent_data["form"] = "both"
         translate_url = reverse("wiki.document", args=[original_slug])
-        translate_url += "$translate?tolocale=" + foreign_locale
+        translate_url += f"$translate?tolocale={foreign_locale}"
         response = self.client.post(
             translate_url, parent_data, HTTP_HOST=settings.WIKI_HOST
         )
         doc_url = reverse("wiki.document", args=[foreign_slug], locale=foreign_locale)
         params = {"rev_saved": ""}
-        doc_url = "%s?%s" % (doc_url, urlencode(params))
+        doc_url = f"{doc_url}?{urlencode(params)}"
         assert response["Location"] == doc_url
 
         # Go to edit the translation, ensure the the slug is correct
@@ -1036,11 +1042,12 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         # Create an English child now
         en_doc = document(
             title="Child Eng Doc",
-            slug=original_slug + "/" + child_slug,
+            slug=f"{original_slug}/{child_slug}",
             is_localizable=True,
             locale=settings.WIKI_DEFAULT_LANGUAGE,
             parent_topic=en_doc,
         )
+
         en_doc.save()
         r = revision(document=en_doc)
         r.save()
@@ -1054,16 +1061,17 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         child_data["form"] = "both"
 
         translate_url = reverse(
-            "wiki.document", args=[original_slug + "/" + child_slug]
+            "wiki.document", args=[f"{original_slug}/{child_slug}"]
         )
-        translate_url += "$translate?tolocale=" + foreign_locale
+
+        translate_url += f"$translate?tolocale={foreign_locale}"
         response = self.client.post(
             translate_url, child_data, HTTP_HOST=settings.WIKI_HOST
         )
-        slug = foreign_slug + "/" + child_data["slug"]
+        slug = f"{foreign_slug}/" + child_data["slug"]
         doc_url = reverse("wiki.document", args=[slug], locale=foreign_locale)
         params = {"rev_saved": ""}
-        doc_url = "%s?%s" % (doc_url, urlencode(params))
+        doc_url = f"{doc_url}?{urlencode(params)}"
         assert response["Location"] == doc_url
 
     def test_restore_translation_source(self):
@@ -1233,8 +1241,8 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         assert page.find("#id_request_technical").length == 1
         assert page.find("#id_request_editorial").length == 1
 
-        doc_entry = "<entry><title>{}</title>".format(doc.title)
-        doc_selector = "ul.document-list li a:contains('{}')".format(doc.title)
+        doc_entry = f"<entry><title>{doc.title}</title>"
+        doc_selector = f"ul.document-list li a:contains('{doc.title}')"
 
         # Ensure the page appears on the listing pages
         response = self.client.get(
@@ -1386,7 +1394,7 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         ]
 
         for data_dict in test_data:
-            slug = "test-quick-review-%s" % data_dict["name"]
+            slug = f'test-quick-review-{data_dict["name"]}'
             data = new_document_data()
             data.update({"review_tags": ["editorial", "technical"], "slug": slug})
             resp = self.client.post(
@@ -1503,7 +1511,7 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
             resp = self.client.post(posting_url, data, HTTP_HOST=settings.WIKI_HOST)
 
         # The url of the document's history
-        locale = translate_locale if translate_locale else doc.locale
+        locale = translate_locale or doc.locale
         doc_path = translation.slug if translate_locale else doc.slug
         history_url = reverse(
             "wiki.document_revisions", kwargs={"document_path": doc_path}, locale=locale
@@ -1518,7 +1526,7 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
             # If this is not an ajax post, then the error comes back in escaped
             # html. We unescape the resp.content, but not all of it, since that
             # causes ascii errors.
-            start_of_error = content.index(collision_err[0:20])
+            start_of_error = content.index(collision_err[:20])
             # Add an some extra characters to the end, since the unescaped length
             # is a little less than the escaped length
             end_of_error = start_of_error + len(collision_err) + 20
@@ -1548,9 +1556,11 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
 
         if translate_locale:
             # Post a new translation on doc
-            translate_url = reverse(
-                "wiki.translate", args=[data["slug"]]
-            ) + "?tolocale={}".format(translate_locale)
+            translate_url = (
+                reverse("wiki.translate", args=[data["slug"]])
+                + f"?tolocale={translate_locale}"
+            )
+
             self.client.post(
                 translate_url, data, follow=True, HTTP_HOST=settings.WIKI_HOST
             )
@@ -1883,7 +1893,7 @@ class DocumentEditingTests(UserTestCase, WikiTestCase):
         assert len(mail.outbox) == 2
 
         def _check_message_for_headers(message, username):
-            assert "%s made their first edit" % username in message.subject
+            assert f"{username} made their first edit" in message.subject
             assert message.extra_headers == {
                 "X-Kuma-Document-Url": doc.get_full_url(),
                 "X-Kuma-Editor-Username": username,
@@ -2342,14 +2352,13 @@ class SectionEditingResourceTests(UserTestCase, WikiTestCase):
         rev_id2 = page.find('input[name="current_rev"]').attr("value")
 
         # Edit #2 submits successfully
-        data.update(
-            {
-                "form-type": "rev",
-                "content": replace_2,
-                "current_rev": rev_id2,
-                "slug": rev.document.slug,
-            }
-        )
+        data |= {
+            "form-type": "rev",
+            "content": replace_2,
+            "current_rev": rev_id2,
+            "slug": rev.document.slug,
+        }
+
         resp = self.client.post(
             "%s?section=s2&raw=true" % reverse("wiki.edit", args=[rev.document.slug]),
             data,
@@ -2364,7 +2373,7 @@ class SectionEditingResourceTests(UserTestCase, WikiTestCase):
 
         # Edit #1 submits, but since it's a different section, there's no
         # mid-air collision
-        data.update({"form-type": "rev", "content": replace_1, "current_rev": rev_id1})
+        data |= {"form-type": "rev", "content": replace_1, "current_rev": rev_id1}
         resp = self.client.post(
             "%s?section=s1&raw=true" % reverse("wiki.edit", args=[rev.document.slug]),
             data,
@@ -2444,14 +2453,13 @@ class SectionEditingResourceTests(UserTestCase, WikiTestCase):
         rev_id2 = page.find('input[name="current_rev"]').attr("value")
 
         # Edit #2 submits successfully
-        data.update(
-            {
-                "form-type": "rev",
-                "content": replace_2,
-                "slug": rev.document.slug,
-                "current_rev": rev_id2,
-            }
-        )
+        data |= {
+            "form-type": "rev",
+            "content": replace_2,
+            "slug": rev.document.slug,
+            "current_rev": rev_id2,
+        }
+
         resp = self.client.post(
             "%s?section=s2&raw=true" % reverse("wiki.edit", args=[rev.document.slug]),
             data,
@@ -2461,7 +2469,7 @@ class SectionEditingResourceTests(UserTestCase, WikiTestCase):
         assert not json.loads(resp.content)["error"]
 
         # Edit #1 submits, but since it's the same section, there's a collision
-        data.update({"form": "rev", "content": replace_1, "current_rev": rev_id1})
+        data |= {"form": "rev", "content": replace_1, "current_rev": rev_id1}
         resp = self.client.post(
             "%s?section=s2&raw=true" % reverse("wiki.edit", args=[rev.document.slug]),
             data,
@@ -2586,7 +2594,7 @@ class SectionEditingResourceTests(UserTestCase, WikiTestCase):
         )
         changed = Document.objects.get(pk=rev.document.id).current_revision
         assert rev.id != changed.id
-        assert set(tags_to_save) == set(t.name for t in changed.review_tags.all())
+        assert set(tags_to_save) == {t.name for t in changed.review_tags.all()}
 
 
 class MindTouchRedirectTests(UserTestCase, WikiTestCase):

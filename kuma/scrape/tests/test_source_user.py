@@ -14,7 +14,7 @@ from ..sources import UserSource
 @pytest.fixture
 def complex_user(db, django_user_model):
     """A complex User record with social and other profile data."""
-    user = django_user_model.objects.create(
+    return django_user_model.objects.create(
         username="JillDeveloper",
         fullname="Jill Developer",
         email="jill@example.com",
@@ -28,7 +28,6 @@ def complex_user(db, django_user_model):
         linkedin_url="http://www.linkedin.com/in/jilldev1999",
         pmo_url="https://people.mozilla.org/p/jilldev/",
     )
-    return user
 
 
 @pytest.mark.parametrize("email", ["", "jack@example.com"])
@@ -66,7 +65,7 @@ def test_gather_banned(simple_user, client):
     UserBan.objects.create(
         user=simple_user, by=simple_user, reason="Turning myself in."
     )
-    user_path = "/en-US/profiles/" + simple_user.username
+    user_path = f"/en-US/profiles/{simple_user.username}"
     result = client.get(user_path)
     source = UserSource(simple_user.username, force=True)
     requester = mock_requester(content=result.content, status_code=result.status_code)

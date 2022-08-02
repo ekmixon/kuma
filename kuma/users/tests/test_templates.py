@@ -302,9 +302,10 @@ class BanUserAndCleanupSummaryTestCase(SampleRevisionsMixin, UserTestCase):
         # The "Actions taken" section
         banned_user = page.find("#banned-user li").text()
         revisions_reported_as_spam = page.find("#revisions-reported-as-spam li")
-        revisions_reported_as_spam_text = ""
-        for rev in revisions_reported_as_spam:
-            revisions_reported_as_spam_text += rev.text_content()
+        revisions_reported_as_spam_text = "".join(
+            rev.text_content() for rev in revisions_reported_as_spam
+        )
+
         revisions_reverted = page.find("#revisions-reverted li")
         revisions_deleted = page.find("#revisions-deleted li")
         assert banned_user == self.testuser.username

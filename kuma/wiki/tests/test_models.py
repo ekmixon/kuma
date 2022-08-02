@@ -67,8 +67,8 @@ def test_clean_current_revision(
     current_rev.tags = tags
     # Let's make the revision's slug and title different from the document
     # to ensure that they're corrected in the end.
-    current_rev.slug = original_doc_slug + "s"
-    current_rev.title = original_doc_title + "s"
+    current_rev.slug = f"{original_doc_slug}s"
+    current_rev.title = f"{original_doc_title}s"
     current_rev.is_approved = is_approved
     current_rev.localization_tags.set(*l10n_tags)
     current_rev.review_tags.set(*review_tags)
@@ -101,11 +101,13 @@ def test_clean_current_revision(
         "</html>\n"
     )
     assert rev.tags == tags
-    assert set(t.name for t in rev.localization_tags.all()) == l10n_tags
-    assert set(t.name for t in rev.review_tags.all()) == review_tags
-    assert rev.comment == "Clean prior revision of {} by {}".format(
-        prior_created, prior_creator
+    assert {t.name for t in rev.localization_tags.all()} == l10n_tags
+    assert {t.name for t in rev.review_tags.all()} == review_tags
+    assert (
+        rev.comment
+        == f"Clean prior revision of {prior_created} by {prior_creator}"
     )
+
     assert rev.slug == original_doc_slug
     assert rev.title == original_doc_title
     assert doc.current_revision.pk == rev.pk
@@ -119,7 +121,7 @@ def test_document_is_not_experiment():
 
 def test_document_is_experiment():
     """A document with the experiment prefix is an experiment."""
-    doc = Document(slug=EXPERIMENT_TITLE_PREFIX + "test")
+    doc = Document(slug=f"{EXPERIMENT_TITLE_PREFIX}test")
     assert doc.is_experiment
 
 
@@ -211,23 +213,18 @@ def test_document_parents(root_doc):
     """Document.parents gives the document hierarchy."""
     assert root_doc.parents == []
     child_doc = Document.objects.create(
-        parent_topic=root_doc, slug=root_doc.slug + "/Child"
+        parent_topic=root_doc, slug=f"{root_doc.slug}/Child"
     )
+
     assert child_doc.parents == [root_doc]
     gchild_doc = Document.objects.create(
-        parent_topic=child_doc, slug=child_doc.slug + "/GrandChild"
+        parent_topic=child_doc, slug=f"{child_doc.slug}/GrandChild"
     )
+
     assert gchild_doc.parents == [root_doc, child_doc]
 
 
-@pytest.mark.parametrize(
-    "url",
-    (
-        settings.SITE_URL + "/en-US/Mozilla",
-        "/en-US/Mozilla",
-        "/",
-    ),
-)
+@pytest.mark.parametrize("url", (f"{settings.SITE_URL}/en-US/Mozilla", "/en-US/Mozilla", "/"))
 def test_document_redirect_allows_valid_url(db, url):
     """get_redirect_url returns valid URLs."""
     title = "Mozilla"
@@ -257,7 +254,7 @@ def test_document_redirect_rejects_invalid_url(db, url):
 
 def test_document_get_full_url(root_doc):
     """get_full_url returns full URLs."""
-    assert root_doc.get_full_url() == settings.SITE_URL + "/en-US/docs/Root"
+    assert root_doc.get_full_url() == f"{settings.SITE_URL}/en-US/docs/Root"
 
 
 def test_document_from_url(root_doc):
@@ -278,8 +275,11 @@ def test_document_from_url_bad_slug_returns_none(trans_doc):
     """from_url returns None for an invalid slug."""
     en_doc = trans_doc.parent
     url = reverse(
-        "wiki.document", locale=trans_doc.locale, args=[en_doc.slug + "_bad_slug"]
+        "wiki.document",
+        locale=trans_doc.locale,
+        args=[f"{en_doc.slug}_bad_slug"],
     )
+
     doc = Document.from_url(url)
     assert doc is None
 
@@ -299,7 +299,7 @@ def test_document_from_url_full_url_returns_doc(root_doc):
 def test_document_from_url_other_url_returns_none(root_doc):
     """from_url returns None for a different domain."""
     assert settings.SITE_URL != "https://example.com"
-    url = "https://example.com" + root_doc.get_absolute_url()
+    url = f"https://example.com{root_doc.get_absolute_url()}"
     assert Document.from_url(url) is None
 
 
@@ -1459,7 +1459,7 @@ class PageMoveTests(UserTestCase):
         page_child_doc.save()
 
         # move page to new slug
-        new_title = page_to_move_title + " Moved"
+        new_title = f"{page_to_move_title} Moved"
 
         page_to_move_doc._move_tree(page_moved_slug, user=None, title=new_title)
 
@@ -1521,7 +1521,7 @@ class PageMoveTests(UserTestCase):
 
     def test_move_special(self):
         root_slug = "User:foo"
-        child_slug = "%s/child" % root_slug
+        child_slug = f"{root_slug}/child"
 
         new_root_slug = "User:foobar"
 
@@ -1563,8 +1563,9 @@ class PageMoveTests(UserTestCase):
         )
         assert original_root_id == moved_root.id
         moved_child = Document.objects.get(
-            locale=special_child.locale, slug="%s/child" % new_root_slug
+            locale=special_child.locale, slug=f"{new_root_slug}/child"
         )
+
         assert original_child_id == moved_child.id
 
         # Second move, back to original slug.
@@ -1576,8 +1577,9 @@ class PageMoveTests(UserTestCase):
         )
         assert root_second_redirect.is_redirect
         child_second_redirect = Document.objects.get(
-            locale=special_child.locale, slug="%s/child" % new_root_slug
+            locale=special_child.locale, slug=f"{new_root_slug}/child"
         )
+
         assert child_second_redirect.is_redirect
 
         # The documents at the original URLs aren't redirects anymore.
@@ -1699,11 +1701,8 @@ class AttachmentTests(UserTestCase):
 
     def test_popuplate_deki_file_url(self):
         attachment, attachment_revision = self.new_attachment()
-        html = """%s%s/@api/deki/files/%s/=""" % (
-            settings.PROTOCOL,
-            settings.ATTACHMENT_HOST,
-            attachment.mindtouch_attachment_id,
-        )
+        html = f"""{settings.PROTOCOL}{settings.ATTACHMENT_HOST}/@api/deki/files/{attachment.mindtouch_attachment_id}/="""
+
         doc = document(html=html, save=True)
         doc.populate_attachments()
 
@@ -1725,7 +1724,7 @@ class AttachmentTests(UserTestCase):
     def test_popuplate_multiple_attachments(self):
         attachment, attachment_revision = self.new_attachment()
         attachment2, attachment_revision2 = self.new_attachment()
-        html = "%s %s" % (attachment.get_file_url(), attachment2.get_file_url())
+        html = f"{attachment.get_file_url()} {attachment2.get_file_url()}"
         doc = document(html=html, save=True)
         populated = doc.populate_attachments()
         attachments = doc.attached_files.all()

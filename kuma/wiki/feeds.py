@@ -37,10 +37,7 @@ class DocumentsFeed(Feed):
 
     def __call__(self, request, *args, **kwargs):
         self.request = request
-        if "all_locales" in request.GET:
-            self.locale = None
-        else:
-            self.locale = request.LANGUAGE_CODE
+        self.locale = None if "all_locales" in request.GET else request.LANGUAGE_CODE
         return super(DocumentsFeed, self).__call__(request, *args, **kwargs)
 
     def feed_extra_kwargs(self, obj):
@@ -77,14 +74,12 @@ class DocumentsFeed(Feed):
         TODO: Enable timezone-aware dates in database, remove check
         """
         raw_pubdate = document.current_revision.created
-        if is_naive(raw_pubdate):
-            # USE_TZ is False, database has naive timestamps
-            timezone = get_current_timezone()
-            pubdate = timezone.localize(raw_pubdate, is_dst=True)
-        else:  # pragma: no cover
+        if not is_naive(raw_pubdate):
             # USE_TZ is True, database has timezone-aware timestamps
-            pubdate = raw_pubdate
-        return pubdate
+            return raw_pubdate
+        # USE_TZ is False, database has naive timestamps
+        timezone = get_current_timezone()
+        return timezone.localize(raw_pubdate, is_dst=True)
 
     def item_title(self, document):
         return document.title
@@ -130,9 +125,8 @@ class DocumentJSONFeedGenerator(SyndicationFeed):
 
         # Check for a callback param, validate it before use
         callback = request.GET.get("callback", None)
-        if callback is not None:
-            if not valid_jsonp_callback_value(callback):
-                callback = None
+        if callback is not None and not valid_jsonp_callback_value(callback):
+            callback = None
 
         user_to_avatar_map = {}
 
@@ -146,8 +140,8 @@ class DocumentJSONFeedGenerator(SyndicationFeed):
             document = item["obj"]
 
             # Include some of the simple elements from the preprocessed item
-            item_out = dict(
-                (x, item[x])
+            item_out = {
+                x: item[x]
                 for x in (
                     "link",
                     "title",
@@ -155,7 +149,8 @@ class DocumentJSONFeedGenerator(SyndicationFeed):
                     "author_name",
                     "author_link",
                 )
-            )
+            }
+
 
             # HACK: DocumentFeed is the superclass of RevisionFeed. In this
             # case, current_revision is the revision itself.
@@ -174,10 +169,13 @@ class DocumentJSONFeedGenerator(SyndicationFeed):
                 item_out["summary"] = summary
 
             # Linkify the tags used in the feed item
-            categories = dict(
-                (x, request.build_absolute_uri(reverse("wiki.tag", kwargs={"tag": x})))
+            categories = {
+                x: request.build_absolute_uri(
+                    reverse("wiki.tag", kwargs={"tag": x})
+                )
                 for x in item["categories"]
-            )
+            }
+
             if categories:
                 item_out["categories"] = categories
 
@@ -186,7 +184,7 @@ class DocumentJSONFeedGenerator(SyndicationFeed):
         data = items_out
 
         if callback:
-            outfile.write("%s(" % callback)
+            outfile.write(f"{callback}(")
         outfile.write(json.dumps(data, default=self._encode_complex))
         if callback:
             outfile.write(")")
@@ -204,7 +202,7 @@ class DocumentsRecentFeed(DocumentsFeed):
         super(DocumentsRecentFeed, self).get_object(request, format)
         self.tag = tag
         if tag:
-            self.title = _("MDN recent changes to documents tagged %s" % tag)
+            self.title = _(f"MDN recent changes to documents tagged {tag}")
             self.link = self.request.build_absolute_uri(
                 reverse("wiki.tag", args=(tag,))
             )
@@ -239,7 +237,7 @@ class DocumentsReviewFeed(DocumentsRecentFeed):
         super(DocumentsReviewFeed, self).get_object(request, format)
         self.subtitle = None
         if tag:
-            self.title = _("MDN documents for %s review" % tag)
+            self.title = _(f"MDN documents for {tag} review")
             self.link = self.request.build_absolute_uri(
                 reverse("wiki.list_review_tag", args=(tag,))
             )
@@ -336,23 +334,15 @@ class RevisionsFeed(DocumentsFeed):
         )
 
     def item_title(self, item):
-        return "%s (%s)" % (item.document.slug, item.document.locale)
+        return f"{item.document.slug} ({item.document.locale})"
 
     def item_description(self, item):
         # TODO: put this in a jinja template if django syndication will let us
         previous = item.previous
-        if previous is None:
-            action = "Created"
-        else:
-            action = "Edited"
+        action = "Created" if previous is None else "Edited"
+        by = f"<h3>{action} by:</h3><p>{item.creator.username}</p>"
 
-        by = "<h3>%s by:</h3><p>%s</p>" % (action, item.creator.username)
-
-        if item.comment:
-            comment = "<h3>Comment:</h3><p>%s</p>" % item.comment
-        else:
-            comment = ""
-
+        comment = f"<h3>Comment:</h3><p>{item.comment}</p>" if item.comment else ""
         review_diff = ""
         tag_diff = ""
         content_diff = ""
@@ -367,12 +357,12 @@ class RevisionsFeed(DocumentsFeed):
                     previous.id,
                     item.id,
                 )
-                review_diff = "<h3>Review changes:</h3>%s" % table
+                review_diff = f"<h3>Review changes:</h3>{table}"
                 review_diff = colorize_diff(review_diff)
 
             if previous.tags != item.tags:
                 table = tag_diff_table(previous.tags, item.tags, previous.id, item.id)
-                tag_diff = "<h3>Tag changes:</h3>%s" % table
+                tag_diff = f"<h3>Tag changes:</h3>{table}"
                 tag_diff = colorize_diff(tag_diff)
 
         previous_content = ""
@@ -383,9 +373,10 @@ class RevisionsFeed(DocumentsFeed):
             current_content = item.get_tidied_content()
             previous_id = previous.id
             if previous_content != current_content:
-                content_diff = content_diff + diff_table(
+                content_diff += diff_table(
                     previous_content, current_content, previous_id, item.id
                 )
+
                 content_diff = colorize_diff(content_diff)
         else:
             content_diff = content_diff + escape(item.content)
@@ -420,13 +411,8 @@ class RevisionsFeed(DocumentsFeed):
             _("History"),
         )
         links_table = '<table border="0" width="80%">'
-        links_table = links_table + "<tr>%s%s%s%s</tr>" % (
-            view_cell,
-            edit_cell,
-            compare_cell,
-            history_cell,
-        )
-        links_table = links_table + "</table>"
+        links_table += f"<tr>{view_cell}{edit_cell}{compare_cell}{history_cell}</tr>"
+        links_table += "</table>"
         return "".join([by, comment, tag_diff, review_diff, content_diff, links_table])
 
     def item_link(self, item):

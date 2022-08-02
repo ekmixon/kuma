@@ -68,13 +68,13 @@ class BaseDocumentManager(models.Manager):
         """Filter documents by moderator flags on the current revision."""
         docs = self.filter_for_list(locale=locale)
         docs = docs.exclude(slug__startswith="Archive/")
-        filter_name = "current_revision__%s_tags__" % revision_tag
+        filter_name = f"current_revision__{revision_tag}_tags__"
         if tag_name:
-            docs = docs.filter(**{filter_name + "name": tag_name})
+            docs = docs.filter(**{f"{filter_name}name": tag_name})
         elif tag:
-            docs = docs.filter(**{filter_name + "in": [tag]})
+            docs = docs.filter(**{f"{filter_name}in": [tag]})
         else:
-            docs = docs.filter(**{filter_name + "name__isnull": False})
+            docs = docs.filter(**{f"{filter_name}name__isnull": False})
         return docs.distinct()
 
     def filter_for_review(self, locale=None, tag=None, tag_name=None):

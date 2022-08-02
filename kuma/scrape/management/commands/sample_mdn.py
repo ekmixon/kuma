@@ -53,10 +53,7 @@ class Command(ScrapeCommand):
         incomplete = 0
         for name, source in sources.items():
             if source.state != source.STATE_DONE:
-                if hasattr(source, "error"):
-                    err = ' "%s"' % source.error
-                else:
-                    err = ""
+                err = ' "%s"' % source.error if hasattr(source, "error") else ""
                 self.stderr.write("%s: %s%s\n" % (name, source.state, err))
                 incomplete += 1
         if incomplete:

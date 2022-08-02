@@ -152,13 +152,13 @@ def test_section_ids():
         ("Quick_Links", "Quick_Links"),
     )
     for cls, id in expected:
-        assert id == result_doc.find(".%s" % cls).attr("id")
+        assert id == result_doc.find(f".{cls}").attr("id")
 
     # Then, ensure all elements in need of an ID now all have unique IDs.
     assert len(SECTION_TAGS)
     els = result_doc.find(", ".join(SECTION_TAGS))
     seen_ids = set()
-    for i in range(0, len(els)):
+    for i in range(len(els)):
         id = els.eq(i).attr("id")
         assert id is not None
         assert id not in seen_ids
@@ -659,7 +659,7 @@ def test_bugize_text_upper():
 def test_filteriframe():
     """The filter drops iframe src that does not match the pattern."""
     slug = "test-code-embed"
-    embed_url = "https://sampleserver/en-US/docs/%s$samples/sample1" % slug
+    embed_url = f"https://sampleserver/en-US/docs/{slug}$samples/sample1"
     doc_src = """\
         <p>This is a page. Deal with it.</p>
         <iframe id="if1" src="%(embed_url)s"></iframe>
@@ -853,10 +853,7 @@ def test_annotate_links_existing_doc(root_doc, anchor, full_url, has_class):
         url = root_doc.get_absolute_url()
     if anchor == "withAnchor":
         url += "#anchor"
-    if has_class == "hasClass":
-        link_class = ' class="extra"'
-    else:
-        link_class = ""
+    link_class = ' class="extra"' if has_class == "hasClass" else ""
     html = normalize_html('<li><a %s href="%s"></li>' % (link_class, url))
     actual_raw = normalize_html(
         parse(html).annotateLinks(base_url=settings.SITE_URL).serialize()
@@ -931,7 +928,7 @@ def test_annotate_links_uilocale_to_nonexisting_doc(db):
 @pytest.mark.parametrize("attributes", ("", 'class="foobar" name="quux"'))
 def test_annotate_links_no_href(attributes):
     """Links without an href do not break the annotator."""
-    html = normalize_html("<li><a %s>No href</a></li>" % attributes)
+    html = normalize_html(f"<li><a {attributes}>No href</a></li>")
     actual_raw = parse(html).annotateLinks(base_url=AL_BASE_URL).serialize()
     assert normalize_html(actual_raw) == html
 
@@ -954,7 +951,7 @@ def test_annotate_links_not_docs_urls():
 @pytest.mark.parametrize("slug", ("root", "ROOT", "rOoT"))
 def test_annotate_links_case_insensitive(root_doc, slug):
     """Links to existing docs are case insensitive."""
-    url = "/en-US/docs/" + slug
+    url = f"/en-US/docs/{slug}"
     assert url != root_doc.get_absolute_url()
     html = normalize_html('<li><a href="%s"></li>' % url)
     actual_raw = parse(html).annotateLinks(base_url=AL_BASE_URL).serialize()
@@ -969,7 +966,7 @@ def test_annotate_links_collation_insensitive(db):
     accent = "Récursion"
     no_accent = "Recursion"
     assert accent.lower() != no_accent.lower
-    Document.objects.create(locale="fr", slug="Glossaire/" + accent, title=accent)
+    Document.objects.create(locale="fr", slug=f"Glossaire/{accent}", title=accent)
     html = normalize_html(
         '<li><a href="/fr/docs/Absent"></li>'
         + '<li><a href="/fr/docs/Glossaire/%s"></li>' % no_accent
@@ -1098,7 +1095,7 @@ def test_clean_content_allows_simple_tag(tag):
 )
 def test_clean_content_allows_self_closed_tags(tag):
     """clean_content allows self-closed tags."""
-    html = "<%s>" % tag
+    html = f"<{tag}>"
     assert clean_content(html) == html
 
 

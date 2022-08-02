@@ -62,22 +62,17 @@ def test_locale_middleware_picker(accept_language, locale, client, db):
     response = client.get("/", HTTP_ACCEPT_LANGUAGE=accept_language)
     assert response.status_code == 301
     url_locale = locale or "en-US"
-    assert response["Location"] == ("/%s/" % url_locale)
+    assert response["Location"] == f"/{url_locale}/"
     assert_shared_cache_header(response)
 
 
 @pytest.mark.parametrize("original,fixed", REDIRECT_CASES)
 def test_locale_middleware_fixer(original, fixed, client, db):
     """The LocaleStandardizerMiddleware redirects non-standard locale URLs."""
-    response = client.get(("/%s/" % original) if original else "/")
-    if original == "":
-        # LocaleMiddleware handles this case, and it's a 301 instead
-        # of a 302 since it's the homepage.
-        expected_status_code = 301
-    else:
-        expected_status_code = 302
+    response = client.get(f"/{original}/" if original else "/")
+    expected_status_code = 301 if original == "" else 302
     assert response.status_code == expected_status_code
-    assert response["Location"] == "/%s/" % fixed
+    assert response["Location"] == f"/{fixed}/"
     assert_shared_cache_header(response)
 
 

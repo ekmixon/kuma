@@ -61,7 +61,7 @@ class Command(BaseCommand):
 
         # Now, prefetch all the documents flagged in need in the previous loop.
         pre_total, pre_cnt = len(to_prefetch), 0
-        logging.info("Prefetching %s documents..." % (len(to_prefetch)))
+        logging.info(f"Prefetching {len(to_prefetch)} documents...")
         for url in to_prefetch:
             full_url = urllib.parse.urljoin(options["baseurl"], url)
             try:

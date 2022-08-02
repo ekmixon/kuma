@@ -22,11 +22,7 @@ class AkismetError(Exception):
         self.debug_help = debug_help
 
     def __str__(self):
-        return "%s response, debug help: %s, full response: %s" % (
-            self.status_code,
-            self.debug_help,
-            self.response.text,
-        )
+        return f"{self.status_code} response, debug help: {self.debug_help}, full response: {self.response.text}"
 
 
 class Akismet(object):
@@ -41,7 +37,7 @@ class Akismet(object):
 
     def __init__(self):
         self.domain = settings.DOMAIN
-        self.ssl = bool(getattr(settings, "SECURE_PROXY_SSL_HEADER", False))
+        self.ssl = getattr(settings, "SECURE_PROXY_SSL_HEADER", False)
         self.session = Session()
         self.adapter = HTTPAdapter(
             max_retries=Retry(
@@ -77,19 +73,17 @@ class Akismet(object):
         """
         if self._verified is None:
             self._verified = self.verify_key()
-            if self._verified is None:
-                return False
-        return self._verified
+        return False if self._verified is None else self._verified
 
     @property
     def url(self):
-        return "https://%s.rest.akismet.com/1.1/" % self.key
+        return f"https://{self.key}.rest.akismet.com/1.1/"
 
     def send(self, method, **payload):
         # blog is the only parameter required by all API endpoints
         if "blog" not in payload:
             scheme = "https" if self.ssl else "http"
-            payload["blog"] = "%s://%s/" % (scheme, self.domain)
+            payload["blog"] = f"{scheme}://{self.domain}/"
         url = urljoin(self.url, method)
         return self.session.post(url, data=payload)
 

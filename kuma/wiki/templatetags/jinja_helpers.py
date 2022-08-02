@@ -60,7 +60,7 @@ def format_comment(rev, previous_revision=None, load_previous=True):
     """
     if previous_revision is None and load_previous:
         previous_revision = rev.previous
-    comment = bugize_text(rev.comment if rev.comment else "")
+    comment = bugize_text(rev.comment or "")
 
     # If a page move, say so
     if previous_revision and previous_revision.slug != rev.slug:
@@ -83,8 +83,8 @@ def revisions_unified_diff(from_revision, to_revision):
     if from_revision is None or to_revision is None:
         return "Diff is unavailable."
 
-    fromfile = "[%s] #%s" % (from_revision.document.locale, from_revision.id)
-    tofile = "[%s] #%s" % (to_revision.document.locale, to_revision.id)
+    fromfile = f"[{from_revision.document.locale}] #{from_revision.id}"
+    tofile = f"[{to_revision.document.locale}] #{to_revision.id}"
 
     tidy_from = from_revision.get_tidied_content()
     tidy_to = to_revision.get_tidied_content()
@@ -229,11 +229,7 @@ def absolutify(url, for_wiki_site=False):
     if url.startswith("http"):
         return url
 
-    if for_wiki_site:
-        site_url = settings.WIKI_SITE_URL
-    else:
-        site_url = settings.SITE_URL
-
+    site_url = settings.WIKI_SITE_URL if for_wiki_site else settings.SITE_URL
     site = urlsplit(site_url)
     parts = urlsplit(url)
     scheme = site.scheme
@@ -261,7 +257,7 @@ def wiki_url(path):
         fragment = ""
     new_path = reverse("wiki.document", args=[slug])
     if fragment:
-        new_path += "#" + fragment
+        new_path += f"#{fragment}"
     return new_path
 
 

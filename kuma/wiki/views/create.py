@@ -102,14 +102,13 @@ def create(request):
         }
         rev_form = RevisionForm(request=request, initial=initial)
 
-        context.update(
-            {
-                "parent_id": initial_parent_id,
-                "document_form": doc_form,
-                "revision_form": rev_form,
-                "initial_tags": initial_tags,
-            }
-        )
+        context |= {
+            "parent_id": initial_parent_id,
+            "document_form": doc_form,
+            "revision_form": rev_form,
+            "initial_tags": initial_tags,
+        }
+
 
     else:
 
@@ -135,6 +134,6 @@ def create(request):
         else:
             doc_form.data["slug"] = posted_slug
 
-        context.update({"document_form": doc_form, "revision_form": rev_form})
+        context |= {"document_form": doc_form, "revision_form": rev_form}
 
     return render(request, "wiki/create.html", context)

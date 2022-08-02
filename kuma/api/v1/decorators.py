@@ -7,7 +7,7 @@ def allow_CORS_GET(func):
     @wraps(func)
     def inner(request, *args, **kwargs):
         response = func(request, *args, **kwargs)
-        if "GET" == request.method:
+        if request.method == "GET":
             response["Access-Control-Allow-Origin"] = "*"
         return response
 

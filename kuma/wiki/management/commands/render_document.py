@@ -80,10 +80,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         base_url = options["baseurl"] or absolutify("")
-        if options["nocache"]:
-            cache_control = "no-cache"
-        else:
-            cache_control = "max-age=0"
+        cache_control = "no-cache" if options["nocache"] else "max-age=0"
         force = options["force"]
         invalidate_cdn_cache = not options["skip_cdn_invalidation"]
 

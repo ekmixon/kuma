@@ -24,10 +24,7 @@ class Command(ScrapeCommand):
 
     def parse_url_or_profile(self, url_or_profile):
         host, ssl, path = self.parse_url_or_path(url_or_profile)
-        if path.startswith("/en-US"):
-            profile = path.split("/")[-1]
-        else:
-            profile = path
+        profile = path.split("/")[-1] if path.startswith("/en-US") else path
         return host, ssl, profile
 
     def handle(self, *arg, **options):
@@ -36,16 +33,18 @@ class Command(ScrapeCommand):
         host, ssl, profile = self.parse_url_or_profile(url_or_profile)
         scraper = self.make_scraper(host=host, ssl=ssl)
 
-        params = {}
-        for param in ("social", "force"):
-            if options[param]:
-                params[param] = options[param]
+        params = {
+            param: options[param]
+            for param in ("social", "force")
+            if options[param]
+        }
+
         if options["email"]:
             params["email"] = options["email"].decode("utf8")
         scraper.add_source("user", profile, **params)
 
         scraper.scrape()
-        source = scraper.sources["user:" + profile]
+        source = scraper.sources[f"user:{profile}"]
         if source.state == source.STATE_ERROR:
             raise CommandError('Unable to scrape user "%s".' % profile)
         elif source.freshness == source.FRESH_NO and not options["force"]:

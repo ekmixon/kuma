@@ -36,7 +36,7 @@ class Requester(object):
         self.ssl = ssl
         self._session = None
         scheme = "https" if ssl else "http"
-        self.base_url = "%s://%s" % (scheme, host)
+        self.base_url = f"{scheme}://{host}"
 
     @property
     def session(self):
@@ -121,23 +121,21 @@ class Scraper(object):
 
     def add_source(self, source_type, source_param="", **options):
         """Add a source of MDN data."""
-        source_key = "%s:%s" % (source_type, source_param)
+        source_key = f"{source_type}:{source_param}"
         if source_key in self.sources:
-            changes = self.sources[source_key].merge_options(**options)
-            if changes:
-                logger.debug(
-                    'Updating source "%s" with options %s', source_key, changes
-                )
-                return True
-            else:
+            if not (changes := self.sources[source_key].merge_options(**options)):
                 return False
+            logger.debug(
+                'Updating source "%s" with options %s', source_key, changes
+            )
         else:
             logger.debug('Adding source "%s" with options %s', source_key, options)
             source_options = self.defaults.get(source_type, {})
             source_options.update(options)
             source = self.create_source(source_key, **source_options)
             self.sources[source_key] = source
-            return True
+
+        return True
 
     def create_source(self, source_key, **options):
         source_type, source_param = source_key.split(":", 1)

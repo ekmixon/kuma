@@ -41,12 +41,10 @@ class RevisionSource(Source):
     @classmethod
     def split_path(cls, path):
         """Extract a revision parameters from a path."""
-        match = cls.re_path.match(path)
-        if match:
-            locale, slug, raw_rev_id = match.groups()
-            return locale, slug, int(raw_rev_id)
-        else:
-            raise ValueError("Not a valid revision path: %s" % path)
+        if not (match := cls.re_path.match(path)):
+            raise ValueError(f"Not a valid revision path: {path}")
+        locale, slug, raw_rev_id = match.groups()
+        return locale, slug, int(raw_rev_id)
 
     def source_path(self):
         """Return MDN URL path for revision source."""
@@ -59,21 +57,20 @@ class RevisionSource(Source):
         if revision and self.document:
             if revision.document == self.document:
                 return True, []
-            else:
-                self.freshness = self.FRESH_NO
-                raise self.SourceError(
-                    'Revision %s is for Document "%s", expected "%s".',
-                    self.revision_id,
-                    revision.document.get_absolute_url(),
-                    self.document.get_absolute_url(),
-                )
+            self.freshness = self.FRESH_NO
+            raise self.SourceError(
+                'Revision %s is for Document "%s", expected "%s".',
+                self.revision_id,
+                revision.document.get_absolute_url(),
+                self.document.get_absolute_url(),
+            )
         else:
             return False, []
 
     def load_prereqs(self, requester, storage):
         """Load document, meta, revision source, and creator."""
         needs = []
-        doc_path = "/%s/docs/%s" % (self.locale, self.slug)
+        doc_path = f"/{self.locale}/docs/{self.slug}"
 
         # Load document, using pre-loaded if available
         if not getattr(self, "document", None):
@@ -117,25 +114,24 @@ class RevisionSource(Source):
 
         if needs:
             return False, {"needs": needs}
-        else:
-            data["id"] = self.revision_id
-            data["creator"] = creator
-            data["document"] = self.document
-            if data["is_current"] and data["slug"] != self.document.slug:
-                logger.warning(
-                    'Current revision %d has slug "%s". Setting'
-                    ' to document slug "%s".',
-                    self.revision_id,
-                    data["slug"],
-                    self.document.slug,
-                )
-                data["slug"] = self.document.slug
-            if data["is_current"]:
-                data["review_tags"] = meta.get("review_tags", [])
-                data["localization_tags"] = meta.get("localization_tags", [])
-            if self.based_on:
-                data["based_on_id"] = based_rev.id
-            return True, data
+        data["id"] = self.revision_id
+        data["creator"] = creator
+        data["document"] = self.document
+        if data["is_current"] and data["slug"] != self.document.slug:
+            logger.warning(
+                'Current revision %d has slug "%s". Setting'
+                ' to document slug "%s".',
+                self.revision_id,
+                data["slug"],
+                self.document.slug,
+            )
+            data["slug"] = self.document.slug
+        if data["is_current"]:
+            data["review_tags"] = meta.get("review_tags", [])
+            data["localization_tags"] = meta.get("localization_tags", [])
+        if self.based_on:
+            data["based_on_id"] = based_rev.id
+        return True, data
 
     def save_data(self, storage, data):
         """Save the extracted revision data."""
@@ -166,11 +162,8 @@ class RevisionSource(Source):
                 value = span.text()
             data[key] = value
 
-        # Parse tags
-        tags = []
         tag_links = parsed.find("ul.tags li a")
-        for tag_link in tag_links:
-            tags.append(tag_link.text)
+        tags = [tag_link.text for tag_link in tag_links]
         data["tags"] = tags
 
         # Revision content

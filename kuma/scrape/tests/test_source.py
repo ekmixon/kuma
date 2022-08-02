@@ -200,9 +200,9 @@ def test_decode_href(href, decoded):
 def test_source_error_str():
     """The Source.Error exception can be turned into a string."""
     error1 = Source.SourceError("A simple error")
-    assert "%s" % error1 == "A simple error"
+    assert f"{error1}" == "A simple error"
     error2 = Source.SourceError('A formatted error, like "%s" and %d.', "a string", 123)
-    assert "%s" % error2 == 'A formatted error, like "a string" and 123.'
+    assert f"{error2}" == 'A formatted error, like "a string" and 123.'
 
 
 def test_gather_done_is_done():

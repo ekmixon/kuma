@@ -56,6 +56,6 @@ class Command(BaseCommand):
             else:
                 self.stdout.write("Deleted the following files:")
             for deleted_item in deleted:
-                self.stdout.write("- %s" % deleted_item)
+                self.stdout.write(f"- {deleted_item}")
         else:
             self.stdout.write("Nothing to delete!")

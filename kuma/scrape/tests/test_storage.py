@@ -30,10 +30,10 @@ from ..storage import Storage
 def test_local_storage(data_name, param_list):
     """Local storage objects are None when unset, return the saved value."""
     storage = Storage()
-    getter = getattr(storage, "get_" + data_name)
-    setter = getattr(storage, "save_" + data_name)
+    getter = getattr(storage, f"get_{data_name}")
+    setter = getattr(storage, f"save_{data_name}")
     assert getter(*param_list) is None
-    value = data_name + " value"
+    value = f"{data_name} value"
     setter(data=value, *param_list)
     assert getter(*param_list) == value
 
@@ -106,7 +106,7 @@ def test_save_document_dupe_tags():
 
 def test_save_document_update_existing(simple_doc):
     """An existing document gets new scraped tags."""
-    assert list(simple_doc.tags.names()) == []
+    assert not list(simple_doc.tags.names())
     data = {
         "id": simple_doc.id,
         "locale": "en-US",

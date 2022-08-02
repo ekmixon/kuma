@@ -83,12 +83,12 @@ class LinksSource(Source):
             return
 
         # Skip other locales, non-translated pages, and the homepage
-        if not path.startswith("/" + self.locale + "/"):
+        if not path.startswith(f"/{self.locale}/"):
             return
 
         # Skip known non-wiki documents
         slug = path.split("/", 2)[2]
-        if any([slug.startswith(ignore) for ignore in self.ignored_slugs]):
+        if any(slug.startswith(ignore) for ignore in self.ignored_slugs):
             return
 
         return path

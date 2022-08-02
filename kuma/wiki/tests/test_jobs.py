@@ -40,7 +40,7 @@ def test_contributors(
     # The freshly un-banned user is now among the contributors because the
     # cache has been invalidated.
     contributors = job.get(root_doc.pk)
-    got = set(c["id"] for c in contributors)
+    got = {c["id"] for c in contributors}
     assert banned_user.pk in got
 
     # Another revision should invalidate the job's cache.
@@ -56,5 +56,5 @@ def test_contributors(
     # The new contributor shows up and is first, followed
     # by the freshly un-banned user, and then the rest.
     contributors = job.get(root_doc.pk)
-    got = set(c["id"] for c in contributors)
+    got = {c["id"] for c in contributors}
     assert got == set([wiki_user_3.pk, banned_user.pk] + valid_contrib_ids)

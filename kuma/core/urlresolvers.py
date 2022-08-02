@@ -24,7 +24,7 @@ class KumaLocalePrefixPattern(LocalePrefixPattern):
     @property
     def language_prefix(self):
         language_code = get_language() or settings.LANGUAGE_CODE
-        return "%s/" % language_code
+        return f"{language_code}/"
 
 
 def i18n_patterns(*urls):
@@ -81,9 +81,7 @@ def find_supported(ranked):
         lang = lang.lower()
         if lang in langs:
             return langs[lang]
-        # Add derived language tags to the end of the list as a fallback.
-        pre = "-".join(lang.split("-")[0:-1])
-        if pre:
+        if pre := "-".join(lang.split("-")[:-1]):
             ranked.append((pre, None))
     # Couldn't find any acceptable locale.
     return False
@@ -100,10 +98,4 @@ def split_path(path):
     # Use partition instead of split since it always returns 3 parts
     first, _, rest = path.partition("/")
 
-    # Treat locale as a single-item ranked list.
-    lang = find_supported([(first, 1.0)])
-
-    if lang:
-        return lang, rest
-    else:
-        return "", path
+    return (lang, rest) if (lang := find_supported([(first, 1.0)])) else ("", path)

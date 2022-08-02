@@ -49,12 +49,7 @@ class _NamespacedTaggableManager(_TaggableManager):
             return tags.exclude(name__contains=":")
 
         if namespace is not None:
-            # Namespace requested, so generate filtered set
-            results = []
-            for tag in tags:
-                if tag.name.startswith(namespace):
-                    results.append(tag)
-            return results
+            return [tag for tag in tags if tag.name.startswith(namespace)]
 
         # No namespace requested, so collate into namespaces
         ns_tags = {}
@@ -96,11 +91,10 @@ class _NamespacedTaggableManager(_TaggableManager):
         Namespace is tag name text up to and including the last
         occurrence of ':'
         """
-        if ":" in tag.name:
-            (ns, name) = tag.name.rsplit(":", 1)
-            return ("%s:" % ns, name)
-        else:
+        if ":" not in tag.name:
             return ("", tag.name)
+        (ns, name) = tag.name.rsplit(":", 1)
+        return f"{ns}:", name
 
     def _ensure_ns(self, namespace, tags):
         """Ensure each tag name in the list starts with the given namespace"""

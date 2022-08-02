@@ -70,7 +70,7 @@ def test_gather_no_prereqs(tagged_doc, client):
 def test_gather_existing_rev_and_doc():
     """If prereqs are present then source is done."""
     doc_path = "/en-US/docs/Test"
-    rev_path = doc_path + "$revision/100"
+    rev_path = f"{doc_path}$revision/100"
     source = RevisionSource(rev_path)
     requester = mock_requester(requester_spec=[])
     storage = mock_storage(spec=["get_document", "get_revision"])
@@ -115,7 +115,7 @@ def test_gather_existing_doc(tagged_doc, client):
 def test_gather_doc_mismatch_is_error():
     """If stored doc does not agree with stored revision doc, then error."""
     doc_path = "/en-US/docs/Test"
-    rev_path = doc_path + "$revision/100"
+    rev_path = f"{doc_path}$revision/100"
     source = RevisionSource(rev_path)
     requester = mock_requester(requester_spec=[])
     storage = mock_storage(spec=["get_document", "get_revision"])
@@ -327,7 +327,7 @@ def test_gather_older_revision(root_doc, client):
 def test_gather_missing_revision_is_error(tagged_doc):
     """If the revision HTML can't be fetched, the source is errored."""
     doc_path = tagged_doc.get_absolute_url()
-    rev_path = doc_path + "$revision/%s" % tagged_doc.current_revision_id
+    rev_path = doc_path + f"$revision/{tagged_doc.current_revision_id}"
     source = RevisionSource(rev_path)
     requester = mock_requester(status_code=404)
     storage = mock_storage(

@@ -31,8 +31,7 @@ def on_pre_social_login(sender, request, **kwargs):
     agreeing to terms and conditions) the 'user_logged_in' won't fire until
     then.
     """
-    sociallogin = kwargs.get("sociallogin")
-    if sociallogin:
+    if sociallogin := kwargs.get("sociallogin"):
         track_event(
             CATEGORY_SIGNUP_FLOW, ACTION_AUTH_SUCCESSFUL, sociallogin.account.provider
         )
@@ -43,8 +42,7 @@ def on_user_signed_up(sender, request, user, **kwargs):
     """
     Signal handler to be called when a given user has signed up.
     """
-    sociallogin = kwargs.get("sociallogin")
-    if sociallogin:
+    if sociallogin := kwargs.get("sociallogin"):
         # If the user did the "social_auth_add" they already logged in and
         # all we needed to do was to "combine" their github social account
         # with their google social account. Or vice versa.
@@ -65,13 +63,13 @@ def on_user_signed_up(sender, request, user, **kwargs):
             "opt-in" if user.is_newsletter_subscribed else "opt-out",
         )
 
-    if switch_is_active("welcome_email"):
-        # only send if the user has already verified
-        # at least one email address
-        if user.emailaddress_set.filter(verified=True).exists():
-            transaction.on_commit(
-                lambda: send_welcome_email.delay(user.pk, request.LANGUAGE_CODE)
-            )
+    if (
+        switch_is_active("welcome_email")
+        and user.emailaddress_set.filter(verified=True).exists()
+    ):
+        transaction.on_commit(
+            lambda: send_welcome_email.delay(user.pk, request.LANGUAGE_CODE)
+        )
 
 
 @receiver(user_logged_in, dispatch_uid="users.user_logged_in")
@@ -86,8 +84,7 @@ def on_user_logged_in(sender, request, user, **kwargs):
     if getattr(request, "social_auth_added", False):
         return
 
-    sociallogin = kwargs.get("sociallogin")
-    if sociallogin:
+    if sociallogin := kwargs.get("sociallogin"):
         track_event(
             CATEGORY_SIGNUP_FLOW,
             ACTION_RETURNING_USER_SIGNIN,

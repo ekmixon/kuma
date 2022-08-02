@@ -117,7 +117,7 @@ def get_supported_language_variant(raw_lang_code):
                 return django_language_code_to_kuma(code)
         # If fr-fr is not supported, try fr-ca.
         for supported_code in supported_lang_codes:
-            if supported_code.startswith(generic_lang_code + "-"):
+            if supported_code.startswith(f"{generic_lang_code}-"):
                 # Kuma: Convert to Kuma language code
                 return django_language_code_to_kuma(supported_code)
     raise LookupError(raw_lang_code)

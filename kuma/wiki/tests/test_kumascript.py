@@ -34,7 +34,7 @@ def mock_es_client(request):
 class KumascriptClientTests(WikiTestCase):
     def test_env_vars(self):
         """Exercise building of env var headers for kumascript"""
-        headers = dict()
+        headers = {}
         env_vars = dict(
             path="/foo/test-slug",
             title="Test title",
@@ -45,11 +45,12 @@ class KumascriptClientTests(WikiTestCase):
         kumascript.add_env_headers(headers, env_vars)
 
         pfx = "x-kumascript-env-"
-        result_vars = dict(
-            (k[len(pfx) :], json.loads(base64.b64decode(v)))
+        result_vars = {
+            k[len(pfx) :]: json.loads(base64.b64decode(v))
             for k, v in headers.items()
             if k.startswith(pfx)
-        )
+        }
+
 
         # Ensure the env vars intended for kumascript match expected values.
         for n in ("title", "slug", "locale", "path"):

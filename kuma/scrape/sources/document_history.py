@@ -19,7 +19,7 @@ class DocumentHistorySource(DocumentBaseSource):
 
     def source_path(self):
         """Get MDN path for the document history."""
-        path = "/%s/docs/%s$history" % (self.locale, self.slug)
+        path = f"/{self.locale}/docs/{self.slug}$history"
         if self.revisions > 1:
             path += "?limit=%d" % self.revisions
         return path
@@ -58,11 +58,9 @@ class DocumentHistorySource(DocumentBaseSource):
         revs = []
         parsed = pq(content)
 
-        # If translation, there may be an entry for the English source
-        en_source = parsed.find(
+        if en_source := parsed.find(
             "li.revision-list-en-source" " div.revision-list-date a"
-        )
-        if en_source:
+        ):
             en_href = self.decode_href(en_source[0].attrib["href"])
         else:
             en_href = None

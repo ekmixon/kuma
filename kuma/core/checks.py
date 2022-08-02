@@ -31,17 +31,19 @@ def react_i18n_check(app_configs, **kwargs):
                 except JSONDecodeError as exception:
                     errors.append(
                         Error(
-                            "Locale file {} is corrupt ({})".format(path, exception),
+                            f"Locale file {path} is corrupt ({exception})",
                             hint=general_hint,
                             id=ERROR_CORRUPT_I18N_FILE,
                         )
                     )
+
                     continue
 
-                missing = [
-                    key for key in ("catalog", "plural", "formats") if key not in data
-                ]
-                if missing:
+                if missing := [
+                    key
+                    for key in ("catalog", "plural", "formats")
+                    if key not in data
+                ]:
                     errors.append(
                         Warning(
                             "Locale file {} is missing keys {!r}".format(path, missing),
@@ -52,9 +54,10 @@ def react_i18n_check(app_configs, **kwargs):
         except FileNotFoundError:
             errors.append(
                 Error(
-                    "Locale file {} does not exist".format(path),
+                    f"Locale file {path} does not exist",
                     hint=general_hint,
                     id=ERROR_MISSING_I18N_FILE,
                 )
             )
+
     return errors

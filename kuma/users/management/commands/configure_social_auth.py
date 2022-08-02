@@ -44,7 +44,7 @@ def overwrite_or_create_env_vars(env_vars):
     with open(file_path, "a") as file:
         file.write("\n")
         for key, value in env_vars.items():
-            file.write(key + "=" + str(value) + "\n")
+            file.write(f"{key}={str(value)}" + "\n")
 
 
 class Command(BaseCommand):
@@ -66,12 +66,9 @@ class Command(BaseCommand):
                 client_id = ""
                 while not client_id:
                     client_id = input("Client ID:").strip()
-                    pass
                 client_secret = ""
                 while not client_secret:
                     client_secret = input("Client Secret:").strip()
-                    pass
-
                 social_app, created = SocialApp.objects.update_or_create(
                     provider=provider,
                     defaults={

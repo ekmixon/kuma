@@ -32,9 +32,9 @@ PROTOCOL = config("PROTOCOL", default="https://")
 DOMAIN = config("DOMAIN", default="developer.mozilla.org")
 SITE_URL = config("SITE_URL", default=PROTOCOL + DOMAIN)
 PRODUCTION_DOMAIN = "developer.mozilla.org"
-PRODUCTION_URL = "https://" + PRODUCTION_DOMAIN
+PRODUCTION_URL = f"https://{PRODUCTION_DOMAIN}"
 STAGING_DOMAIN = "developer.allizom.org"
-STAGING_URL = "https://" + STAGING_DOMAIN
+STAGING_URL = f"https://{STAGING_DOMAIN}"
 
 _PROD_INTERACTIVE_EXAMPLES = "https://interactive-examples.mdn.mozilla.net"
 INTERACTIVE_EXAMPLES_BASE = config(
@@ -117,7 +117,7 @@ CACHES = {
 vars().update(config("EMAIL_URL", default="console://", cast=dj_email_url.parse))
 EMAIL_SUBJECT_PREFIX = config("EMAIL_SUBJECT_PREFIX", default="[mdn]")
 # Ensure EMAIL_SUBJECT_PREFIX has one trailing space
-EMAIL_SUBJECT_PREFIX = EMAIL_SUBJECT_PREFIX.strip() + " "
+EMAIL_SUBJECT_PREFIX = f"{EMAIL_SUBJECT_PREFIX.strip()} "
 
 # Addresses email comes from
 DEFAULT_FROM_EMAIL = config(
@@ -215,10 +215,10 @@ def _get_locales():
     with open(lang_path, "r") as lang_file:
         json_locales = json.load(lang_file)
 
-    locales = {}
-    for locale, meta in json_locales.items():
-        locales[locale] = _Language(meta["English"], meta["native"])
-    return locales
+    return {
+        locale: _Language(meta["English"], meta["native"])
+        for locale, meta in json_locales.items()
+    }
 
 
 LOCALES = _get_locales()
@@ -406,8 +406,7 @@ if CSP_ENABLE_MIDDLEWARE:
     # For more config, see "Content Security Policy (CSP)" below
     MIDDLEWARE += ("csp.middleware.CSPMiddleware",)
 
-ENABLE_QUERYCOUNT = config("ENABLE_QUERYCOUNT", default=False, cast=bool)
-if ENABLE_QUERYCOUNT:
+if ENABLE_QUERYCOUNT := config("ENABLE_QUERYCOUNT", default=False, cast=bool):
     # Prints heavy query counts per request.
     QUERYCOUNT = {
         "IGNORE_REQUEST_PATTERNS": [r"^/admin/"],
@@ -426,9 +425,9 @@ AUTH_USER_MODEL = "users.User"
 
 if urlsplit(STATIC_URL).hostname in (None, "localhost"):
     # Avatar needs a publicly available default image
-    DEFAULT_AVATAR = PRODUCTION_URL + "/static/img/avatar.png"
+    DEFAULT_AVATAR = f"{PRODUCTION_URL}/static/img/avatar.png"
 else:
-    DEFAULT_AVATAR = STATIC_URL + "img/avatar.png"
+    DEFAULT_AVATAR = f"{STATIC_URL}img/avatar.png"
 
 ROOT_URLCONF = "kuma.urls"
 
@@ -602,12 +601,10 @@ WHITENOISE_MAX_AGE = 60 * 60 * 24 * 7
 
 def pipeline_scss(output, sources, **kwargs):
     """Define a CSS file generated from multiple SCSS files."""
-    definition = {
-        "source_filenames": tuple("styles/%s.scss" % src for src in sources),
-        "output_filename": "build/styles/%s.css" % output,
-    }
-    definition.update(kwargs)
-    return definition
+    return {
+        "source_filenames": tuple(f"styles/{src}.scss" for src in sources),
+        "output_filename": f"build/styles/{output}.css",
+    } | kwargs
 
 
 def pipeline_one_scss(slug, **kwargs):
@@ -1052,7 +1049,7 @@ pipeline_overrides = (
     "CLEANCSS_ARGUMENTS",
 )
 for override in pipeline_overrides:
-    env_value = config("PIPELINE_" + override, default=None)
+    env_value = config(f"PIPELINE_{override}", default=None)
     if env_value is not None:
         PIPELINE[override] = env_value
 
@@ -1076,7 +1073,7 @@ ALLOWED_HOSTS = config(
 )
 
 _PROD_ATTACHMENT_HOST = "mdn.mozillademos.org"
-_PROD_ATTACHMENT_SITE_URL = "https://" + _PROD_ATTACHMENT_HOST
+_PROD_ATTACHMENT_SITE_URL = f"https://{_PROD_ATTACHMENT_HOST}"
 ATTACHMENT_HOST = config("ATTACHMENT_HOST", default=_PROD_ATTACHMENT_HOST)
 ATTACHMENT_SITE_URL = PROTOCOL + ATTACHMENT_HOST
 _PROD_ATTACHMENT_ORIGIN = "demos-origin.mdn.mozit.cloud"
@@ -1092,7 +1089,7 @@ ATTACHMENT_ORIGIN = config("ATTACHMENT_ORIGIN", default=_PROD_ATTACHMENT_ORIGIN)
 ATTACHMENTS_CACHE_CONTROL_MAX_AGE = config(
     "ATTACHMENTS_CACHE_CONTROL_MAX_AGE", default=60 * 60 * 24, cast=int
 )
-WIKI_HOST = config("WIKI_HOST", default="wiki." + DOMAIN)
+WIKI_HOST = config("WIKI_HOST", default=f"wiki.{DOMAIN}")
 WIKI_SITE_URL = PROTOCOL + WIKI_HOST
 
 # This should never be false for the production and stage deployments.
@@ -1138,10 +1135,7 @@ def parse_iframe_url(url):
     assert parts.scheme in ("http", "https")
     path = ""
     if parts.path.strip("/") != "":
-        if "*" in parts.path:
-            path = re.compile(parts.path)
-        else:
-            path = parts.path
+        path = re.compile(parts.path) if "*" in parts.path else parts.path
     return (parts.scheme, parts.netloc, path)
 
 
@@ -1175,8 +1169,9 @@ if INTERACTIVE_EXAMPLES_BASE != _PROD_INTERACTIVE_EXAMPLES:
 
 # Add more iframe patterns from the environment
 _ALLOWED_IFRAME_PATTERNS = config("ALLOWED_IFRAME_PATTERNS", default="", cast=Csv())
-for pattern in _ALLOWED_IFRAME_PATTERNS:
-    ALLOWED_IFRAME_PATTERNS.append(parse_iframe_url(pattern))
+ALLOWED_IFRAME_PATTERNS.extend(
+    parse_iframe_url(pattern) for pattern in _ALLOWED_IFRAME_PATTERNS
+)
 
 # Allow all iframe sources (for debugging)
 ALLOW_ALL_IFRAMES = config("ALLOW_ALL_IFRAMES", default=False, cast=bool)
@@ -1205,12 +1200,13 @@ CSP_FRAME_SRC = [
 CSP_IMG_SRC = [
     SITE_URL,
     "data:",
-    PROTOCOL + "i2.wp.com",
+    f"{PROTOCOL}i2.wp.com",
     "https://*.githubusercontent.com",
     "https://www.google-analytics.com",
     _PROD_ATTACHMENT_SITE_URL,
     WIKI_SITE_URL,
 ]
+
 if ATTACHMENT_SITE_URL not in (_PROD_ATTACHMENT_SITE_URL, SITE_URL):
     CSP_IMG_SRC.append(ATTACHMENT_SITE_URL)
 
@@ -1671,9 +1667,7 @@ BLOCKABLE_USER_AGENTS = [
     "curl",
 ]
 
-SENTRY_DSN = config("SENTRY_DSN", default=None)
-
-if SENTRY_DSN:
+if SENTRY_DSN := config("SENTRY_DSN", default=None):
     from raven.transport.requests import RequestsHTTPTransport
 
     RAVEN_CONFIG = {

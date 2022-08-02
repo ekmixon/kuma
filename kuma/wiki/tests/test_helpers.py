@@ -93,20 +93,22 @@ def test_revisions_unified_diff_non_ascii(wiki_user):
     rev1 = Revision.objects.create(
         document=doc1,
         creator=wiki_user,
-        content="<p>%s started...</p>" % title1,
+        content=f"<p>{title1} started...</p>",
         title=title1,
         created=datetime(2018, 11, 21, 18, 39),
     )
+
 
     title2 = "Außendienstüberwachlösung"
     doc2 = Document.objects.create(locale="en-US", slug=title2, title=title2)
     rev2 = Revision.objects.create(
         document=doc2,
         creator=wiki_user,
-        content="<p>%s started...</p>" % title2,
+        content=f"<p>{title2} started...</p>",
         title=title1,
         created=datetime(2018, 11, 21, 18, 41),
     )
+
 
     revisions_unified_diff(rev1, rev2)  # No UnicodeEncodeError
 

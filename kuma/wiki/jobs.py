@@ -49,9 +49,9 @@ class DocumentContributorsJob(KumaJob):
 
         # then return the ordered results given the ID list, MySQL only syntax
         select = {
-            "ordered_ids": "FIELD(id,%s)"
-            % ",".join(str(id) for id in recent_creator_ids),
+            "ordered_ids": f'FIELD(id,{",".join((str(id) for id in recent_creator_ids))})'
         }
+
 
         return list(
             User.objects.filter(id__in=recent_creator_ids, is_active=True)

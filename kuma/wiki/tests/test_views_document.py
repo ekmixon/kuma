@@ -117,7 +117,7 @@ def test_disallowed_methods(client, http_method, endpoint):
         kwargs = dict(document_path="Web/CSS")
     if endpoint == "toc":
         headers.update(HTTP_HOST=settings.WIKI_HOST)
-    url = reverse("wiki.{}".format(endpoint), kwargs=kwargs)
+    url = reverse(f"wiki.{endpoint}", kwargs=kwargs)
     response = getattr(client, http_method)(url, **headers)
     assert response.status_code == 405
     assert_shared_cache_header(response)
@@ -128,7 +128,7 @@ def test_apply_content_experiment_no_experiment(ce_settings, rf):
     doc = mock.Mock(spec_set=["locale", "slug"])
     doc.locale = "en-US"
     doc.slug = "Other"
-    request = rf.get("/%s/docs/%s" % (doc.locale, doc.slug))
+    request = rf.get(f"/{doc.locale}/docs/{doc.slug}")
 
     experiment_doc, params = _apply_content_experiment(request, doc)
 
@@ -141,7 +141,7 @@ def test_apply_content_experiment_has_experiment(ce_settings, rf):
     doc = mock.Mock(spec_set=["locale", "slug"])
     doc.locale = "en-US"
     doc.slug = "Original"
-    request = rf.get("/%s/docs/%s" % (doc.locale, doc.slug))
+    request = rf.get(f"/{doc.locale}/docs/{doc.slug}")
 
     experiment_doc, params = _apply_content_experiment(request, doc)
 
@@ -163,7 +163,7 @@ def test_apply_content_experiment_selected_original(ce_settings, rf):
     db_doc = mock.Mock(spec_set=["locale", "slug"])
     doc.locale = db_doc.locale = "en-US"
     doc.slug = db_doc.slug = "Original"
-    request = rf.get("/%s/docs/%s" % (doc.locale, doc.slug), {"v": "control"})
+    request = rf.get(f"/{doc.locale}/docs/{doc.slug}", {"v": "control"})
 
     with mock.patch(
         "kuma.wiki.views.document.Document.objects.get", return_value=db_doc
@@ -183,7 +183,7 @@ def test_apply_content_experiment_selected_variant(ce_settings, rf):
     doc.locale = db_doc.locale = "en-US"
     doc.slug = "Original"
     db_doc.slug = "Experiment:Test/Variant"
-    request = rf.get("/%s/docs/%s" % (doc.locale, doc.slug), {"v": "test"})
+    request = rf.get(f"/{doc.locale}/docs/{doc.slug}", {"v": "test"})
 
     with mock.patch(
         "kuma.wiki.views.document.Document.objects.get", return_value=db_doc
@@ -201,7 +201,7 @@ def test_apply_content_experiment_bad_selection(ce_settings, rf):
     doc = mock.Mock(spec_set=["locale", "slug"])
     doc.locale = "en-US"
     doc.slug = "Original"
-    request = rf.get("/%s/docs/%s" % (doc.locale, doc.slug), {"v": "other"})
+    request = rf.get(f"/{doc.locale}/docs/{doc.slug}", {"v": "other"})
 
     experiment_doc, params = _apply_content_experiment(request, doc)
 
@@ -215,7 +215,7 @@ def test_apply_content_experiment_valid_selection_no_doc(ce_settings, rf):
     doc = mock.Mock(spec_set=["locale", "slug"])
     doc.locale = "en-US"
     doc.slug = "Original"
-    request = rf.get("/%s/docs/%s" % (doc.locale, doc.slug), {"v": "test"})
+    request = rf.get(f"/{doc.locale}/docs/{doc.slug}", {"v": "test"})
 
     with mock.patch(
         "kuma.wiki.views.document.Document.objects.get",
@@ -342,16 +342,16 @@ def test_json(doc_hierarchy, client, params_case):
     expected_status_code = 200
     if params_case == "nothing":
         expected_status_code = 400
-    elif params_case == "title-only":
-        expected_slug = top_doc.slug
-        params = dict(title=top_doc.title)
     elif params_case == "slug-only":
         expected_slug = bottom_doc.slug
         params = dict(slug=bottom_doc.slug)
     elif params_case == "title-and-slug":
         expected_slug = top_doc.slug
         params = dict(title=top_doc.title, slug=bottom_doc.slug)
-    else:  # missing title
+    elif params_case == "title-only":
+        expected_slug = top_doc.slug
+        params = dict(title=top_doc.title)
+    else:
         expected_status_code = 404
         params = dict(title="nonexistent document title")
 
@@ -514,7 +514,7 @@ def test_redirect_suppression(client, settings, root_doc, redirect_doc, case):
     url = redirect_doc.get_absolute_url()
     response = client.get(url, HTTP_HOST=host)
     assert response.status_code == 301
-    response = client.get(url + "?redirect=no", HTTP_HOST=host)
+    response = client.get(f"{url}?redirect=no", HTTP_HOST=host)
     assert response.status_code == 200
 
 
@@ -543,7 +543,7 @@ def test_redirects_only_internal(
     content = response.content.decode(response.charset)
     body = pq(content).find("#wikiArticle")
     assert body.text() == "REDIRECT DWB"
-    assert body.find('a[href="{}"]'.format(href))
+    assert body.find(f'a[href="{href}"]')
 
 
 @mock.patch("kuma.wiki.kumascript.get")
@@ -570,7 +570,7 @@ def test_self_redirect_supression(
     content = response.content.decode(response.charset)
     body = pq(content).find("#wikiArticle")
     assert body.text() == "REDIRECT Self Redirection"
-    assert body.find('a[href="{}"][class="redirect"]'.format(url))
+    assert body.find(f'a[href="{url}"][class="redirect"]')
 
 
 @pytest.mark.parametrize(
@@ -595,9 +595,7 @@ def test_hreflang(client, root_doc, locales, expected_results):
         assert response.status_code == 200, url
         html = pq(response.content.decode(response.charset))
         assert html.attr("lang") == expected_result
-        assert html.find(
-            'head > link[hreflang="{}"][href$="{}"]'.format(expected_result, url)
-        )
+        assert html.find(f'head > link[hreflang="{expected_result}"][href$="{url}"]')
 
 
 @pytest.mark.parametrize(
@@ -629,7 +627,7 @@ def test_wiki_only_query_params(
     # document page, so let's explicitly mock the "server_side_render" call.
     mock_ssr.return_value = "<div></div>"
     mock_kumascript_get.return_value = (root_doc.html, None)
-    url = root_doc.get_absolute_url() + "?{}".format(param)
+    url = root_doc.get_absolute_url() + f"?{param}"
     response = client.get(url)
     assert response.status_code == status
     if status == 301:
