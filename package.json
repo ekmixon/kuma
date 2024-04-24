@@ -90,7 +90,7 @@
         "react-svg-loader": "3.0.3",
         "react-test-renderer": "^16.8.4",
         "stylelint": "^13.6.1",
-        "supertest": "^4.0.2",
+        "supertest": "^7.0.0",
         "svgo": "1.3.2",
         "uglify-js": "2.8.29",
         "webpack": "^4.44.1",
