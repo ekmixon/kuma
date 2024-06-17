@@ -80,7 +80,7 @@
         "flow-bin": "^0.133.0",
         "hard-source-webpack-plugin": "0.13.1",
         "husky": "0.14.3",
-        "jest": "^26.4.2",
+        "jest": "^28.0.0",
         "jest-junit": "^11.0.1",
         "node-sass": "^4.14.1",
         "node-sass-chokidar": "^1.5.0",
